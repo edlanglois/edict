@@ -18,14 +18,13 @@ setuptools.setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     packages=["edict"],
-    package_dir={"edict": "src/edict"},
     package_data={"edict": ["edict.lark"]},
     entry_points={"console_scripts": ["edict=edict.cli:main"]},
-    install_requires=["lark", "setuptools"],
+    install_requires=["lark-parser", "setuptools"],
     classifiers=[
         "Programming Language :: Python :: 3",
         "Operating System :: OS Independent",
-        "License :: OSI Approved :: MIT License",
+        # "License :: OSI Approved :: MIT License",
     ],
     python_requires=">=3.7",
 )
