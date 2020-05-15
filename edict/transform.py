@@ -1,4 +1,4 @@
-"""Transform records according to an Edict program."""
+"""Transform records according to an edict program."""
 from __future__ import annotations
 
 import operator

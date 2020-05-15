@@ -1,4 +1,4 @@
-"""Parse Edict files."""
+"""Parse edict files."""
 from __future__ import annotations
 
 import ast
@@ -147,7 +147,7 @@ class _TransformPipeline(lark.Transformer):
 if __name__ == "__main__":
     import argparse
 
-    argparser = argparse.ArgumentParser(description="Parse an Edict file.")
+    argparser = argparse.ArgumentParser(description="Parse an edict file.")
     argparser.add_argument("file", type=str, help="Edict file")
     args = argparser.parse_args()
     program = parse_file(args.file)

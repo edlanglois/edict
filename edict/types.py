@@ -1,4 +1,4 @@
-"""Data types used by the Edict python package."""
+"""Data types used by the edict python package."""
 from __future__ import annotations
 
 from enum import Enum
