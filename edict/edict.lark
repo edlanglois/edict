@@ -3,14 +3,12 @@ start: headers rules
 headers: _header*
 _header: header_default_field
        | header_case_insensitive_match
-//       | header_default_value
 header_default_field: "default_field" _field_name
-// header_default_value: "default_value" _field_name _literal
 header_case_insensitive_match: "case_insensitive_match" _boolean
 
 rules: rule*
 rule: "if" conditions "then" assignments
-conditions: _condition*
+conditions: _boolean | _condition*
 _condition: regular_condition | simple_condition
 simple_condition: ":" match_value
 regular_condition: "|" condition_equation ( "&" condition_equation )*
@@ -27,10 +25,6 @@ _assignment_value: QUOTED_STRING
 
 // Tokens
 // =====
-// Whitespace
-// %import common.NEWLINE
-// INDENT: NEWLINE WS
-
 // Boolean
 _boolean: FALSE | TRUE
 FALSE: "false"

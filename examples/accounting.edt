@@ -6,7 +6,7 @@ default_field description
 case_insensitive_match true # False by default
 
 # Catch-all
-if then
+if true then
 	account1 "assets:bank-account"
 	account2 "income:unknown"
 

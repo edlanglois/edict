@@ -129,6 +129,13 @@ class _TransformPipeline(lark.Transformer):
         return lark.Token.new_borrow_pos(t_value.type, value, t_value)
 
     def conditions(self, args):
+        if len(args) == 1:
+            (t_value,) = args
+            if isinstance(t_value, lark.Token):
+                if t_value.value:
+                    return [ConditionExpression(checks=())]
+                else:
+                    return []
         return args
 
     def assignment(self, args):
