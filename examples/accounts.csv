@@ -1,4 +1,4 @@
-date,account number,description,value
+date,account number,description,amount
 2020-01-05,1234,Payment from apple company,10.00
 2020-01-06,4321,Bought Apples,-3.00
 2020-01-20,1234,Pearly oysters,-5.23

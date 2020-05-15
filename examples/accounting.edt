@@ -3,7 +3,7 @@
 # date
 # amount
 default_field description
-# case_sensitive_match false # True by default
+case_insensitive_match true # False by default
 
 # Catch-all
 if then

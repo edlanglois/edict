@@ -67,7 +67,7 @@ def _make_lexer_callback(f: Callable[[str], Any]) -> Callable[[lark.Token], lark
 
 
 def _eval_regex(regex: str) -> re.Pattern:
-    return re.compile(ast.literal_eval("".join(('"', regex[1:-1], '"'))))
+    return ast.literal_eval("".join(('"', regex[1:-1], '"')))
 
 
 _DATA_TYPES = {"ESCAPED_STRING": "STRING"}
@@ -78,13 +78,11 @@ _DATA_TYPES = {"ESCAPED_STRING": "STRING"}
 class _TransformPipeline(lark.Transformer):
     def __init__(self):
         self._assigned_fields = set()
-        self._context = {"case_sensitive": True}
+        self._context = {}
 
-    def header_case_sensitive_match(self, args):
+    def header_case_insensitive_match(self, args):
         (t_value,) = args
-        self._context["case_sensitive"] = t_value.value
-        # TODO: Implement case insensitivity in transform.
-        raise NotImplementedError
+        self._context["case_insensitive"] = t_value.value
 
     def header_default_field(self, args):
         (t_field,) = args
@@ -117,6 +115,18 @@ class _TransformPipeline(lark.Transformer):
 
     def regular_condition(self, args):
         return ConditionExpression(checks=tuple(args))
+
+    def match_value(self, args):
+        (t_value,) = args
+        case_insensitive = self._context.get("case_insensitive", False)
+
+        if t_value.type == "REGEX_STRING":
+            flags = re.IGNORECASE if case_insensitive else 0
+            value = re.compile(t_value.value, flags=flags)
+        else:
+            assert t_value.type == "QUOTED_STRING"
+            value = t_value.lower()
+        return lark.Token.new_borrow_pos(t_value.type, value, t_value)
 
     def conditions(self, args):
         return args

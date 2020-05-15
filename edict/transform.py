@@ -53,26 +53,32 @@ class Transformer:
         if field is None:
             field = self.context["default_field"]
         try:
-            rhs_str = record[field]
+            value_str = record[field]
         except KeyError:
             return False
 
-        lhs = equation.data
         operator = equation.operator
 
         if operator == Operator.MATCH:
-            rhs_match = rhs_str
-            if isinstance(lhs, str):
-                return lhs in rhs_match
+            pattern = equation.data
+            string = value_str
+            if isinstance(pattern, str):
+                case_insensitive = self.context.get("case_insensitive", False)
+                if case_insensitive:
+                    string = string.lower()
+                # pattern already lowered
+                return pattern in string
             else:
-                assert isinstance(lhs, re.Pattern)
-                return bool(lhs.search(rhs_match))
+                assert isinstance(pattern, re.Pattern)
+                # lhs compiled with IGNORECASE if case_insensitive
+                return bool(pattern.search(string))
 
         compare_values_fn = _VALUE_COMPARISONS.get(operator)
         if compare_values_fn is not None:
-            assert not isinstance(lhs, re.Pattern)
-            rhs_comp = _parse_like(rhs_str, lhs)
-            return compare_values_fn(lhs, rhs_comp)
+            rhs = equation.data
+            assert not isinstance(rhs, re.Pattern)
+            lhs = _parse_like(value_str, rhs)
+            return compare_values_fn(lhs, rhs)
 
         raise AssertionError(f"Unknown operator {operator}")
 
@@ -101,7 +107,7 @@ def _parse_like(s, x):
     if isinstance(x, str):
         return s
     if isinstance(x, Decimal):
-        return Decimal(x)
+        return Decimal(s)
     raise AssertionError(f"Unexpected type {type(x)}")
 
 
