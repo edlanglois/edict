@@ -1,0 +1,66 @@
+start: headers rules
+
+headers: _header*
+_header: header_default_field
+//       | header_case_sensitive_match
+//       | header_default_value
+header_default_field: "default_field" _field_name
+// header_default_value: "default_value" _field_name _literal
+// header_case_sensitive_match: "case_sensitive_match" _boolean
+
+rules: rule*
+rule: "if" conditions "then" assignments
+conditions: _condition*
+_condition: regular_condition | simple_condition
+simple_condition: ":" _match_value
+regular_condition: "|" condition_equation ( "&" condition_equation )*
+condition_equation: _field_name (_compare_literals_op _literal | MATCH _match_value)
+
+_field_name: WORD | QUOTED_STRING
+
+_match_value: QUOTED_STRING | REGEX_STRING
+_literal: QUOTED_STRING | NUMBER
+
+assignments: assignment*
+assignment: _field_name _assignment_value
+_assignment_value: QUOTED_STRING
+
+// Tokens
+// =====
+// Whitespace
+// %import common.NEWLINE
+// INDENT: NEWLINE WS
+
+// Boolean
+_boolean: FALSE | TRUE
+FALSE: "false"
+TRUE: "true"
+
+// Number
+%import common.FLOAT
+%import common.INT
+NUMBER: ["+"|"-"]? FLOAT|INT
+
+// Strings
+WORD: /\w+/
+QUOTED_STRING: "\"" /(?:[^"\\]|\\.)*/ "\""
+REGEX_STRING: "/" /(?:[^\/\\]|\\.)*/ "/"
+// RAW_LINE_STRING: /\S([^\n]*\S)?/
+
+// Operator between two literals
+_compare_literals_op: EQ | NE | LT | LE | GT | GE
+// Comparison operators
+MATCH: "~"
+EQ: "="
+NE: "!="
+LT: "<"
+GT: ">"
+LE: "<="
+GE: ">="
+
+// Ignores
+%import common.WS
+%ignore WS
+
+COMMENT: "#" /[^\n]/*
+%ignore COMMENT
