@@ -7,7 +7,7 @@ import pathlib
 import sys
 from typing import Generator, Optional, TextIO
 
-from edict.edict import Edict
+from edict import Edict
 
 
 def parse_args(argv=None):
