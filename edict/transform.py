@@ -114,4 +114,8 @@ def _parse_like(s, x):
 def _apply_assignments(assignments: Sequence[Assignment], record: Record) -> None:
     """Apply assignments to a rule in-place."""
     for assignment in assignments:
-        record[assignment.field] = assignment.value
+        value = "".join(
+            record.get(term.value, "") if term.is_field else term.value
+            for term in assignment.terms
+        )
+        record[assignment.field] = value

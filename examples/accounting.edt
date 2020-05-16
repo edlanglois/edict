@@ -7,13 +7,13 @@ case_insensitive_match true # False by default
 
 # Catch-all
 if true then
-	account1 "assets:bank-account"
-	account2 "income:unknown"
+	account1 = "assets:bank-account"
+	account2 = "income:unknown"
 
 if
 | amount < 0
 then
-	account2 "expenses:unknown"
+	account2 = "expenses:unknown"
 
 # Categorize fruit expenses
 if
@@ -22,15 +22,15 @@ if
 : /pear\b/
 | description ~ "apple" & amount < 0
 then
-	account2 "expenses:groceries"
-	comment "Fruit and Vegetables"
+	account2 = "expenses:groceries"
+	comment = "Fruit and Vegetables"
 
 if
 | date = "2020-02-01" & value = -13.37
 then
-	account2 "expenses:one-time-thing"
+	account2 = "expenses:one-time-thing"
 
 if
 | description = "Direct deposit" & date >= "2020-02-10"
 then
-	account2 "income:new-job"
+	account2 = "income:new-job"

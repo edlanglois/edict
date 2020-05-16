@@ -1,17 +1,18 @@
 # Test edict features
+case_insensitive_match true
 
 # Test parsing with field names that are keywords
 if
 | description != "Apples"
 then
-	"if" "then"
+	{if} "then"
 	then "if"
 
 # Test account field containing spaces
 if
-| "account number" = "4321"
+| {account number} = "4321"
 then
-	"account number" "1234"
+	{account number} "1234"
 
 # You can add a new field
 if
@@ -25,7 +26,7 @@ if
 then
 	new_field_comment "small"
 
-# Check fo missing new_field
+# Check for missing new_field
 if
 | new_field = ""
 then
@@ -37,3 +38,8 @@ if # Comments can go here
 then # here
 	# here
 	comment "pearly" # or here
+
+if
+| description ~ "pear"
+then
+	comment "Cost: " . amount

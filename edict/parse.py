@@ -1,7 +1,6 @@
 """Parse edict files."""
 from __future__ import annotations
 
-import ast
 import decimal
 import re
 from typing import TYPE_CHECKING, Any, Callable, Union
@@ -11,6 +10,7 @@ import pkg_resources
 
 from edict.types import (
     Assignment,
+    AssignmentTerm,
     ConditionEquation,
     ConditionExpression,
     Operator,
@@ -41,8 +41,9 @@ def _get_parser():
         "FALSE": _make_const_lexer_callback(False),
         "TRUE": _make_const_lexer_callback(True),
         "NUMBER": _make_lexer_callback(decimal.Decimal),
-        "QUOTED_STRING": _make_lexer_callback(ast.literal_eval),
-        "REGEX_STRING": _make_lexer_callback(_eval_regex),
+        "QUOTED_STRING": _make_lexer_callback(_decode_quoted_string),
+        "REGEX_STRING": _make_lexer_callback(_decode_regex_string),
+        "FIELD_STRING": _make_lexer_callback(_decode_field_string),
     }
     return lark.Lark.open(
         grammar_file,
@@ -66,8 +67,43 @@ def _make_lexer_callback(f: Callable[[str], Any]) -> Callable[[lark.Token], lark
     return _callback
 
 
-def _eval_regex(regex: str) -> re.Pattern:
-    return ast.literal_eval("".join(('"', regex[1:-1], '"')))
+def _decode_regex_string(s: str) -> str:
+    return re.sub(r"\/", "/", s[1:-1])
+
+
+def _decode_field_string(s: str) -> str:
+    return re.sub(r"\}", "}", s[1:-1])
+
+
+def _decode_quoted_string(s: str) -> str:
+    """Decode all edict escape sequences in the given string."""
+    return _STRING_ESCAPE_PATTERN.sub(_escape_replace, s[1:-1])
+
+
+_ESCAPE_SEQUENCES = {
+    "\\\\": "\\",
+    r"\a": "\a",
+    r"\b": "\b",
+    r"\f": "\f",
+    r"\n": "\n",
+    r"\r": "\r",
+    r"\t": "\t",
+    r"\v": "\v",
+}
+
+_STRING_ESCAPE_PATTERN = re.compile(
+    "|".join(
+        [re.escape(k) for k in _ESCAPE_SEQUENCES.keys()]
+        + [r"\\x[0-9A-Fa-f]{2}", r"\\u[0-9A-Fa-f]{4}", r"\\U[0-9A-Fa-f]{6}"]
+    )
+)
+
+
+def _escape_replace(m: re.Match) -> str:
+    s = m.group(0)
+    if s.startswith(r"\x"):
+        return chr(hex(s[2:], 16))
+    return _ESCAPE_SEQUENCES[s]
 
 
 _DATA_TYPES = {"ESCAPED_STRING": "STRING"}
@@ -138,11 +174,17 @@ class _TransformPipeline(lark.Transformer):
                     return []
         return args
 
+    def assignment_term(self, args):
+        (t_value,) = args
+        return AssignmentTerm(
+            is_field=t_value.type in ("FIELD_STRING", "WORD"), value=t_value.value
+        )
+
     def assignment(self, args):
-        t_field, t_value = args
+        t_field, *terms = args
         field = t_field.value
         self._assigned_fields.add(field)
-        return Assignment(field=t_field.value, value=t_value.value)
+        return Assignment(field=t_field.value, terms=terms)
 
     def assignments(self, args):
         return args

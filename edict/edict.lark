@@ -14,14 +14,15 @@ simple_condition: ":" match_value
 regular_condition: "|" condition_equation ( "&" condition_equation )*
 condition_equation: _field_name (_compare_literals_op _literal | MATCH match_value)
 
-_field_name: WORD | QUOTED_STRING
+_field_name: WORD | FIELD_STRING
 
 match_value: QUOTED_STRING | REGEX_STRING
 _literal: QUOTED_STRING | NUMBER
 
 assignments: assignment*
-assignment: _field_name _assignment_value
-_assignment_value: QUOTED_STRING
+assignment: _field_name _assignment_expr
+_assignment_expr: assignment_term ( "." assignment_term )*
+assignment_term: QUOTED_STRING | _field_name
 
 // Tokens
 // =====
@@ -36,9 +37,25 @@ TRUE: "true"
 NUMBER: ["+"|"-"]? FLOAT|INT
 
 // Strings
+// Escape codes:
+// \\ => \
+// \/ => /
+// \} => }
+// \a => ASCII bell
+// \b => ASCII backspace
+// \f => ASCII form feed
+// \n => ASCII line feed
+// \r => ASCII carriage return
+// \t => ASCII horizontal tab
+// \v => ASCII vertical tab
+// \xhh => Character with hex value hh
+// \uxxxx => Character with 16-bit hex value xxxx
+// \Uxxxxxx => Character with 32-bit hex value xxxxxx
 WORD: /\w+/
 QUOTED_STRING: "\"" /(?:[^"\\]|\\.)*/ "\""
 REGEX_STRING: "/" /(?:[^\/\\]|\\.)*/ "/"
+FIELD_STRING: "{" /(?:[^\/}]|\\.)*/ "}"
+
 // RAW_LINE_STRING: /\S([^\n]*\S)?/
 
 // Operator between two literals

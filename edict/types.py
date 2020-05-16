@@ -21,6 +21,7 @@ if TYPE_CHECKING:
 
 __all__ = [
     "Assignment",
+    "AssignmentTerm",
     "ConditionEquation",
     "ConditionExpression",
     "Operator",
@@ -52,7 +53,12 @@ class ConditionExpression(NamedTuple):
 
 class Assignment(NamedTuple):
     field: str
-    value: Any
+    terms: Sequence[AssignmentTerm]
+
+
+class AssignmentTerm(NamedTuple):
+    is_field: bool
+    value: str
 
 
 class Rule(NamedTuple):
