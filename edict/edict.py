@@ -4,11 +4,11 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, TextIO, Union
 
 from edict.protocols import PROTOCOLS
-from edict.transform import Transformer
-from edict.types import Program, RecordStream
+from edict.types import RecordStream
 
 if TYPE_CHECKING:
     import os
+    from edict.program import Program
 
 
 class Edict:
@@ -25,13 +25,13 @@ class Edict:
         Note that the individual records are modified in-place.
         """
         # Merge orignal and added keys, preseving order without duplicates
+        program = self._program
         fields = tuple(
-            dict((x, None) for x in data.fields + self._program.assigned_fields).keys()
+            dict((x, None) for x in data.fields + program.assigned_fields).keys()
         )
-        transformer = self._transformer
         return RecordStream(
             fields=fields,
-            records=(transformer.transform(record) for record in data.records),
+            records=(program.transform(record) for record in data.records),
         )
 
     @staticmethod
@@ -42,4 +42,3 @@ class Edict:
 
     def __init__(self, program: Program):
         self._program = program
-        self._transformer = Transformer(program)

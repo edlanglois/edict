@@ -1,22 +1,15 @@
 """Parse edict files."""
 from __future__ import annotations
 
-import decimal
+import operator
 import re
+from decimal import Decimal
 from typing import TYPE_CHECKING, Any, Callable, Union
 
 import lark
 import pkg_resources
 
-from edict.types import (
-    Assignment,
-    AssignmentTerm,
-    ConditionEquation,
-    ConditionExpression,
-    Operator,
-    Program,
-    Rule,
-)
+from edict import program
 
 if TYPE_CHECKING:
     import os
@@ -24,12 +17,12 @@ if TYPE_CHECKING:
 __all__ = ["parse", "parse_file"]
 
 
-def parse(text: str) -> Program:
+def parse(text: str) -> program.Program:
     parser = _get_parser()
     return parser.parse(text)
 
 
-def parse_file(file: Union[str, bytes, os.PathLike]) -> Program:
+def parse_file(file: Union[str, bytes, os.PathLike]) -> program.Program:
     parser = _get_parser()
     with open(file, "r") as f:
         return parser.parse(f.read())
@@ -41,15 +34,15 @@ def _get_parser():
     lexer_callbacks = {
         "FALSE": _make_const_lexer_callback(False),
         "TRUE": _make_const_lexer_callback(True),
-        "NUMBER": _make_lexer_callback(decimal.Decimal),
+        "NUMBER": _make_lexer_callback(Decimal),
         "QUOTED_STRING": decode_quoted_string_callback,
+        "BRACED_IDENTIFIER": decode_quoted_string_callback,
         "REGEX_STRING": _make_lexer_callback(_decode_regex_string),
-        "FIELD_STRING": decode_quoted_string_callback,
     }
     return lark.Lark.open(
         grammar_file,
         parser="lalr",
-        transformer=_TransformPipeline(),
+        transformer=_TransformToProgram(),
         lexer_callbacks=lexer_callbacks,
     )
 
@@ -70,10 +63,6 @@ def _make_lexer_callback(f: Callable[[str], Any]) -> Callable[[lark.Token], lark
 
 def _decode_regex_string(s: str) -> str:
     return re.sub(r"\/", "/", s[1:-1])
-
-
-def _decode_field_string(s: str) -> str:
-    return re.sub(r"\}", "}", s[1:-1])
 
 
 def _decode_quoted_string(s: str) -> str:
@@ -104,18 +93,28 @@ _STRING_ESCAPE_PATTERN = re.compile(
 def _escape_replace(m: re.Match) -> str:
     s = m.group(0)
     if s.startswith(r"\x"):
-        return chr(hex(s[2:], 16))
+        return chr(int(s[2:], 16))
     return _ESCAPE_SEQUENCES[s]
 
 
 _DATA_TYPES = {"ESCAPED_STRING": "STRING"}
 
+_OPERATOR_FUNCTIONS = {
+    "EQ": operator.eq,
+    "NE": operator.ne,
+    "LT": operator.lt,
+    "LE": operator.le,
+    "GT": operator.gt,
+    "GE": operator.ge,
+}
+
 
 # TODO: Report line numbers in errors
 # Use @v_args(meta=True) along with propagate_positions=True
-class _TransformPipeline(lark.Transformer):
+class _TransformToProgram(lark.Transformer):
+    """Transform to a structured Edict program"""
+
     def __init__(self):
-        self._assigned_fields = set()
         self._context = {}
 
     def header_case_insensitive_match(self, args):
@@ -123,86 +122,119 @@ class _TransformPipeline(lark.Transformer):
         self._context["case_insensitive"] = t_value.value
 
     def header_default_field(self, args):
-        (t_field,) = args
-        self._context["default_field"] = t_field.value
+        (identifier,) = args
+        self._context["default_field"] = identifier.name
 
     def headers(self, args):
         assert all(x is None for x in args), "Not all headers were processed"
         return self._context
 
-    def condition_equation(self, args):
-        t_field, t_op, t_value = args
-
-        return ConditionEquation(
-            field=t_field.value, operator=Operator[t_op.type], data=t_value.value,
-        )
-
-    def simple_condition(self, args):
+    def literal(self, args):
         (t_value,) = args
+        if t_value.type == "QUOTED_STRING":
+            assert isinstance(t_value.value, str)
+            dtype = program.DataType.STRING
+        elif t_value.type == "NUMBER":
+            assert isinstance(t_value.value, Decimal)
+            dtype = program.DataType.NUMBER
+        elif t_value.type in ("TRUE", "FALSE"):
+            assert isinstance(t_value.value, bool)
+            dtype = program.DataType.BOOLEAN
+        else:
+            assert False, f"Unexpected type: {t_value.type}"
+
+        return program.Literal(value=t_value.value, dtype=dtype)
+
+    def identifier(self, args):
+        (t_name,) = args
+        assert isinstance(t_name.value, str)
+        return program.Identifier(t_name.value)
+
+    def u_expr(self, args):
+        if len(args) == 1:
+            return args[0]
+
+        t_op, inner = args
+        if t_op.value == "+":
+            return inner
+        return program.UnaryMinus(inner)
+
+    def m_expr(self, args):
+        if len(args) == 1:
+            return args[0]
+
+        left, right = args
+        return program.BinaryNumericOperator(left, right, operator.mul)
+
+    def a_expr(self, args):
+        if len(args) == 1:
+            return args[0]
+
+        left, right = args
+        return program.BinaryNumericOperator(left, right, operator.add)
+
+    def comp_expr(self, args):
+        if len(args) == 1:
+            return args[0]
+
+        left, t_op, right = args
+        if t_op.type == "MATCH":
+            return self._make_match(t_pattern=right, string=left)
+        else:
+            return program.ValueComparisonOperator(
+                left=left, right=right, op=_OPERATOR_FUNCTIONS[t_op.type]
+            )
+
+    def default_match_expr(self, args):
+        (t_pattern,) = args
         try:
             field = self._context["default_field"]
         except KeyError:
             raise ValueError("Must specify 'default_field' when using ':' conditions")
-        return ConditionExpression(
-            checks=(
-                ConditionEquation(
-                    field=field, operator=Operator.MATCH, data=t_value.value
-                ),
-            )
+
+        return self._make_match(t_pattern=t_pattern, string=program.Identifier(field))
+
+    def _make_match(
+        self, t_pattern: lark.Token, string: program.ProgramElement
+    ) -> program.Match:
+        return program.Match(
+            pattern=t_pattern.value,
+            string=string,
+            is_regex=(t_pattern.type == "REGEX_STRING"),
+            case_insensitive=self._context.get("case_insensitive", False),
         )
 
-    def regular_condition(self, args):
-        return ConditionExpression(checks=tuple(args))
-
-    def match_value(self, args):
-        (t_value,) = args
-        case_insensitive = self._context.get("case_insensitive", False)
-
-        if t_value.type == "REGEX_STRING":
-            flags = re.IGNORECASE if case_insensitive else 0
-            value = re.compile(t_value.value, flags=flags)
-        else:
-            assert t_value.type == "QUOTED_STRING"
-            value = t_value.lower()
-        return lark.Token.new_borrow_pos(t_value.type, value, t_value)
-
-    def conditions(self, args):
+    def not_expr(self, args):
         if len(args) == 1:
-            (t_value,) = args
-            if isinstance(t_value, lark.Token):
-                if t_value.value:
-                    return [ConditionExpression(checks=())]
-                else:
-                    return []
-        return args
+            return args[0]
 
-    def assignment_term(self, args):
-        (t_value,) = args
-        return AssignmentTerm(
-            is_field=t_value.type in ("FIELD_STRING", "WORD"), value=t_value.value
-        )
+        _, inner = args
+        return program.UnaryNot(inner)
+
+    def and_expr(self, args):
+        if len(args) == 1:
+            return args[0]
+
+        return program.Conjunction(args)
+
+    def or_expr(self, args):
+        if len(args) == 1:
+            return args[0]
+
+        return program.Disjunction(args)
 
     def assignment(self, args):
-        t_field, *terms = args
-        field = t_field.value
-        self._assigned_fields.add(field)
-        return Assignment(field=t_field.value, terms=terms)
-
-    def assignments(self, args):
-        return args
+        identifier, value = args
+        return program.Assignment(name=identifier.name, value=value)
 
     def rule(self, args):
-        conditions, assignments = args
-        return Rule(conditions, assignments)
-
-    def rules(self, args):
-        return args
+        condition, *assignments = args
+        return program.Rule(condition=condition, assignments=assignments)
 
     def start(self, args):
-        context, rules = args
-        return Program(
-            context=context, rules=rules, assigned_fields=tuple(self._assigned_fields)
-        )
+        header, *rules = args
+        del header
+        return program.Program(rules=rules)
 
 
 if __name__ == "__main__":
@@ -211,5 +243,5 @@ if __name__ == "__main__":
     argparser = argparse.ArgumentParser(description="Parse an edict file.")
     argparser.add_argument("file", type=str, help="Edict file")
     args = argparser.parse_args()
-    program = parse_file(args.file)
-    print(program)
+    p = parse_file(args.file)
+    print(p)

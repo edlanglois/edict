@@ -6,7 +6,7 @@ if
 | description != "Apples"
 then
 	{if} "then"
-	then "if"
+	{then} "if"
 
 # Test account field containing spaces
 if

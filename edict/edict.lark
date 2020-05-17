@@ -1,38 +1,38 @@
-start: headers rules
+start: headers _rules
 
 headers: _header*
 _header: header_default_field
        | header_case_insensitive_match
-header_default_field: "default_field" field_name
-header_case_insensitive_match: "case_insensitive_match" boolean_value
-header_true_value: "true_value" string_value
-header_false_falue: "false_value" string_value
+header_default_field: "default_field" identifier
+header_case_insensitive_match: "case_insensitive_match" _boolean
+// header_true_value: "true_value" string_value
+// header_false_falue: "false_value" string_value
 
-rules: rule*
-rule: "if" expression "then" assignments
+_rules: rule*
+rule: "if" _expression "then" _assignments
 
 // The record values processed by edict are represented as strings
 // However, expressions in the edict language have a simple type system used for
 // operator overloading.
-// Possible types: string, number, boolean, pattern, record_value
+// Possible types: string, number, boolean, pattern
 // Record values are cast to/from other types automatically.
 // Ambiguities are resolved in favour of strings.
 
-identifier: WORD | FIELD_STRING
-literal: QUOTED_STRING | NUMBER | BOOLEAN
-match_literal: QUOTED_STRING | REGEX_STRING
+literal: QUOTED_STRING | NUMBER | _boolean
+identifier: CNAME | BRACED_IDENTIFIER
+_match_literal: QUOTED_STRING | REGEX_STRING
 
-atom: identifier | literal | LPAREN expression RPAREN
+_atom: literal | identifier | "(" _expression ")"
 
 // Extension: Add casting as a function call
 // primary: atom | call
-// call: WORD "(" expression ")"
-primary: atom
+// call: CNAME "(" expression ")"
+_primary: _atom
 
 // Unary expression
 // - :: Numeric negation
 // + :: Numeric identity
-u_expr: primary | PLUSMINUS u_expr
+u_expr: _primary | PLUSMINUS u_expr
 
 // Multiplication priority expression
 m_expr: u_expr | m_expr "*" u_expr
@@ -41,28 +41,29 @@ m_expr: u_expr | m_expr "*" u_expr
 a_expr: m_expr | a_expr PLUSMINUS m_expr
 
 // Comparison expression
-comp_expr: a_expr COMPARISON_OP a_expr | a_expr "~" match_literal
+comp_expr: a_expr | a_expr _comparison_op a_expr | a_expr MATCH _match_literal
 
 // Logical not
-not_expr: comp_expr | "!" comp_expr
+not_expr: comp_expr | BANG not_expr
 // Logical and
 and_expr: not_expr ( "&" not_expr )*
 // Logical or
 // At least one term but the first can optionally start with an operator
 or_expr: and_expr _or_part* | _or_part+
-_or_part: "|" and_expr | ":" match_literal
+_or_part: "|" and_expr | ":" default_match_expr
+default_match_expr: _match_literal
 
-expression: or_expr
+_expression: or_expr
 
-assignment: identifier expression
-assignments: assignment*
+assignment: identifier _expression
+_assignments: assignment*
 
 
 // Tokens
 // ======
-WORD: /\w+/
+%import common.CNAME
 
-// Quoted string and field string escape sequences
+// Quoted string and identifier string escape sequences
 // \\ => \
 // \} => }
 // \a => ASCII bell
@@ -76,26 +77,29 @@ WORD: /\w+/
 // \uxxxx => Character with 16-bit hex value xxxx
 // \Uxxxxxx => Character with 32-bit hex value xxxxxx
 QUOTED_STRING: "\"" /(?:[^"\\]|\\.)*/ "\""
-FIELD_STRING: "{" /(?:[^\/}]|\\.)*/ "}"
+BRACED_IDENTIFIER: "{" /(?:[^\/}]|\\.)*/ "}"
 // Regex string escape sequences: \/ => / (plus all python regex escapes)
 REGEX_STRING: "/" /(?:[^\/\\]|\\.)*/ "/"
 
 %import common.NUMBER
-BOOLEAN: TRUE | FALSE
-FALSE: "false"
-TRUE: "true"
+_boolean: TRUE | FALSE
+FALSE.2: "false"
+TRUE.2: "true"
 
 PLUSMINUS: PLUS | MINUS
 PLUS: "+"
 MINUS: "-"
+BANG: "!"
 
-COMPARISON_OP: EQ | NE | LT | LE | GT | GE
+_comparison_op: EQ | NE | LT | LE | GT | GE
 EQ: "="
 NE: "!="
 LT: "<"
-GT: ">"
 LE: "<="
+GT: ">"
 GE: ">="
+
+MATCH: "~"
 
 // Ignores
 %import common.WS
