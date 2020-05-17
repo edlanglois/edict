@@ -164,7 +164,9 @@ class _TransformToProgram(lark.Transformer):
             return args[0]
 
         left, right = args
-        return program.BinaryOperator(left, right, operator.mul, DataType.NUMBER)
+        return program.BinaryOperator(
+            left, right, operator.mul, program.DataType.NUMBER
+        )
 
     def a_expr(self, args):
         if len(args) == 1:

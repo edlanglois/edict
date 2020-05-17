@@ -4,7 +4,7 @@ from __future__ import annotations
 import re
 from decimal import Decimal
 from enum import Enum
-from typing import Any, Callable, Optional, Sequence, Union
+from typing import Any, Callable, Optional, Sequence, Tuple, Union
 
 from edict.types import Record
 
@@ -271,7 +271,7 @@ class Rule(ProgramElement):
 class Program(ProgramElement):
     def __init__(self, rules: Sequence[Rule]):
         self.rules = rules
-        self.assigned_fields: Sequence[str] = tuple(
+        self.assigned_fields: Tuple[str, ...] = tuple(
             set(
                 [
                     assignment.name
