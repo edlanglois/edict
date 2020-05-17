@@ -109,8 +109,6 @@ _OPERATOR_FUNCTIONS = {
 }
 
 
-# TODO: Report line numbers in errors
-# Use @v_args(meta=True) along with propagate_positions=True
 class _TransformToProgram(lark.Transformer):
     """Transform to a structured Edict program"""
 
