@@ -37,13 +37,14 @@ def parse_file(file: Union[str, bytes, os.PathLike]) -> Program:
 
 def _get_parser():
     grammar_file = pkg_resources.resource_filename("edict", "edict.lark")
+    decode_quoted_string_callback = _make_lexer_callback(_decode_quoted_string)
     lexer_callbacks = {
         "FALSE": _make_const_lexer_callback(False),
         "TRUE": _make_const_lexer_callback(True),
         "NUMBER": _make_lexer_callback(decimal.Decimal),
-        "QUOTED_STRING": _make_lexer_callback(_decode_quoted_string),
+        "QUOTED_STRING": decode_quoted_string_callback,
         "REGEX_STRING": _make_lexer_callback(_decode_regex_string),
-        "FIELD_STRING": _make_lexer_callback(_decode_field_string),
+        "FIELD_STRING": decode_quoted_string_callback,
     }
     return lark.Lark.open(
         grammar_file,
@@ -82,6 +83,7 @@ def _decode_quoted_string(s: str) -> str:
 
 _ESCAPE_SEQUENCES = {
     "\\\\": "\\",
+    r"\}": "}",
     r"\a": "\a",
     r"\b": "\b",
     r"\f": "\f",
