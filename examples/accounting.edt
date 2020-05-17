@@ -26,11 +26,11 @@ then
 	comment = "Fruit and Vegetables"
 
 if
-| date = "2020-02-01" & amount = -13.37
+| date == "2020-02-01" & amount == -13.37
 then
 	account2 = "expenses:one-time-thing"
 
 if
-| description = "Direct deposit" & date >= "2020-02-10"
+| description == "Direct deposit" & date >= "2020-02-10"
 then
 	account2 = "income:new-job"

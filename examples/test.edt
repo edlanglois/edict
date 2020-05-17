@@ -16,7 +16,7 @@ then
 
 # Test account field containing spaces
 if
-| {account number} = "4321"
+| {account number} == "4321"
 then
 	{account number} = "1234"
 
@@ -35,7 +35,7 @@ then
 
 # Check for missing new_field
 if
-| new_field = ""
+| new_field == ""
 then
 	new_field_comment = "missing"
 

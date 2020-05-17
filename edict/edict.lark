@@ -93,7 +93,7 @@ BANG: "!"
 DOT: "."
 
 _comparison_op: EQ | NE | LT | LE | GT | GE
-EQ: "="
+EQ: "=="
 NE: "!="
 LT: "<"
 LE: "<="
