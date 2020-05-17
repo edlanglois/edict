@@ -55,7 +55,7 @@ default_match_expr: _match_literal
 
 _expression: or_expr
 
-assignment: identifier _expression
+assignment: identifier "=" _expression
 _assignments: assignment*
 
 

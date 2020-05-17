@@ -1,46 +1,52 @@
 # Test edict features
 case_insensitive_match true
 
+if true then
+	foo = "bar"
+
+if false then
+	foo = "baz"
+
 # Test parsing with field names that are keywords
 if
 | description != "Apples"
 then
-	{if} "then"
-	{then} "if"
+	{if} = "then"
+	{then} = "if"
 
 # Test account field containing spaces
 if
 | {account number} = "4321"
 then
-	{account number} "1234"
+	{account number} = "1234"
 
 # You can add a new field
 if
 | date < "2020-02-01"
 then
-	new_field "2"
+	new_field = "2"
 
 # And use it here
 if
 # Numeric comparisons require that the field exists, short circuit out if not
 | new_field != "" & new_field < 10  # Unquoted, interpreted as number
 then
-	new_field_comment "small"
+	new_field_comment = "small"
 
 # Check for missing new_field
 if
 | new_field = ""
 then
-	new_field_comment "missing"
+	new_field_comment = "missing"
 
 if # Comments can go here
 # here
 | description~"Pear" # here
 then # here
 	# here
-	comment "pearly" # or here
+	comment = "pearly" # or here
 
 if
 | description ~ "pear"
 then
-	comment "Cost: " . amount
+	comment = "Cost: " . amount
