@@ -164,14 +164,25 @@ class _TransformToProgram(lark.Transformer):
             return args[0]
 
         left, right = args
-        return program.BinaryNumericOperator(left, right, operator.mul)
+        return program.BinaryOperator(left, right, operator.mul, DataType.NUMBER)
 
     def a_expr(self, args):
         if len(args) == 1:
             return args[0]
 
-        left, right = args
-        return program.BinaryNumericOperator(left, right, operator.add)
+        left, t_op, right = args
+        if t_op.value == "+":
+            op = operator.add
+            dtype = program.DataType.NUMBER
+        elif t_op.value == "-":
+            op = operator.sub
+            dtype = program.DataType.NUMBER
+        elif t_op.value == ".":
+            op = operator.concat
+            dtype = program.DataType.STRING
+        else:
+            assert False, f"Unexpected operator: {t_op}"
+        return program.BinaryOperator(left, right, op, dtype)
 
     def comp_expr(self, args):
         if len(args) == 1:

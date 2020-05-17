@@ -22,7 +22,8 @@ then
 
 # And use it here
 if
-| new_field < 10  # Unquoted, interpreted as number
+# Numeric comparisons require that the field exists, short circuit out if not
+| new_field != "" & new_field < 10  # Unquoted, interpreted as number
 then
 	new_field_comment "small"
 

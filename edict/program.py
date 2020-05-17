@@ -10,7 +10,7 @@ from edict.types import Record
 
 __all__ = [
     "Assignment",
-    "BinaryNumericOperator",
+    "BinaryOperator",
     "Conjunction",
     "DataType",
     "Disjunction",
@@ -58,7 +58,10 @@ class Literal(ProgramElement):
         return self.value
 
     def __str__(self):
-        return str(self.value)
+        if isinstance(self.value, str):
+            return repr(self.value)
+        else:
+            return str(self.value)
 
 
 class Identifier(ProgramElement):
@@ -89,7 +92,7 @@ class UnaryMinus(ProgramElement):
         return f"-({self.inner})"
 
 
-class _BinaryOperator(ProgramElement):
+class BinaryOperator(ProgramElement):
     def __init__(
         self,
         left: ProgramElement,
@@ -124,20 +127,10 @@ class _BinaryOperator(ProgramElement):
         return self.op(left_value, right_value)
 
     def __str__(self):
-        return f"{self.op}({self.left}, {self.right})"
+        return f"{self.left} .{self.op.__name__}. {self.right}"
 
 
-class BinaryNumericOperator(_BinaryOperator):
-    def __init__(
-        self,
-        left: ProgramElement,
-        right: ProgramElement,
-        op: Callable[[Decimal, Decimal], Decimal],
-    ):
-        super().__init__(left=left, right=right, op=op, dtype=DataType.NUMBER)
-
-
-class ValueComparisonOperator(_BinaryOperator):
+class ValueComparisonOperator(BinaryOperator):
     """Compare two values."""
 
     def __init__(
@@ -190,7 +183,7 @@ class Match(ProgramElement):
             return bool(pattern.search(string))
 
     def __str__(self):
-        return f"{self.string}~{self.pattern}"
+        return f"{self.string} ~ {self.pattern}"
 
 
 class UnaryNot(ProgramElement):
@@ -250,7 +243,7 @@ class Assignment(ProgramElement):
         record[self.name] = value_str
 
     def __str__(self):
-        return f"{self.name} {self.value}"
+        return f"{{{self.name}}} {self.value}"
 
 
 class Rule(ProgramElement):

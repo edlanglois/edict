@@ -38,7 +38,7 @@ u_expr: _primary | PLUSMINUS u_expr
 m_expr: u_expr | m_expr "*" u_expr
 
 // Addition priority expression
-a_expr: m_expr | a_expr PLUSMINUS m_expr
+a_expr: m_expr | a_expr ( PLUSMINUS | DOT ) m_expr
 
 // Comparison expression
 comp_expr: a_expr | a_expr _comparison_op a_expr | a_expr MATCH _match_literal
@@ -90,6 +90,7 @@ PLUSMINUS: PLUS | MINUS
 PLUS: "+"
 MINUS: "-"
 BANG: "!"
+DOT: "."
 
 _comparison_op: EQ | NE | LT | LE | GT | GE
 EQ: "="
