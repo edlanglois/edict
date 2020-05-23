@@ -4,7 +4,7 @@ from __future__ import annotations
 import re
 from decimal import Decimal
 from enum import Enum
-from typing import Any, Callable, Optional, Sequence, Tuple, Union
+from typing import Any, Callable, Generic, Optional, Sequence, Tuple, TypeVar, Union
 
 from edict.types import Record
 
@@ -24,10 +24,12 @@ __all__ = [
     "UnaryMinus",
     "UnaryNot",
     "ValueComparisonOperator",
+    "as_boolean",
+    "as_number",
+    "as_string",
+    "as_type",
+    "string_encode",
 ]
-
-
-ValueType = Union[str, bool, Decimal, None]
 
 
 class DataType(Enum):
@@ -37,24 +39,37 @@ class DataType(Enum):
     BOOLEAN = 3
     INDEFINITE_STRING = 4
 
+    def __str__(self):
+        return self.name
 
-class ProgramElement:
+
+T = TypeVar("T", str, bool, Decimal, None)
+T1 = TypeVar("T1", str, bool, Decimal, None)
+T2 = TypeVar("T2", str, bool, Decimal, None)
+
+
+class ProgramElement(Generic[T]):
     """Interface of a program element."""
 
     def __init__(self, dtype: DataType):
         self.dtype = dtype
 
-    def __call__(self, record: Record) -> ValueType:
+    def __call__(self, record: Record) -> T:
         """Evaluate on the given record."""
         raise NotImplementedError
 
 
-class Literal(ProgramElement):
-    def __init__(self, value: Union[str, bool, Decimal], dtype: DataType):
-        super().__init__(dtype=dtype)
-        self.value = value
+T_literal = TypeVar("T_literal", str, bool, Decimal)
 
-    def __call__(self, record: Record) -> Union[str, bool, Decimal]:
+
+class Literal(ProgramElement[T_literal]):
+    """Stores a constant value."""
+
+    def __init__(self, value: T_literal, dtype: DataType):
+        super().__init__(dtype=dtype)
+        self.value: T_literal = value
+
+    def __call__(self, record: Record) -> T_literal:
         return self.value
 
     def __str__(self):
@@ -64,7 +79,9 @@ class Literal(ProgramElement):
             return str(self.value)
 
 
-class Identifier(ProgramElement):
+class Identifier(ProgramElement[str]):
+    """Stores a record field name."""
+
     def __init__(self, name: str):
         super().__init__(dtype=DataType.INDEFINITE_STRING)
         self.name = name
@@ -76,61 +93,150 @@ class Identifier(ProgramElement):
         return f"{{{self.name}}}"
 
 
-class UnaryMinus(ProgramElement):
+class _AsString(ProgramElement[str]):
     def __init__(self, inner: ProgramElement):
-        super().__init__(dtype=DataType.NUMBER)
-        _check_compatible(inner.dtype, self.dtype)
+        dtype = DataType.STRING
+        if inner.dtype != dtype and inner.dtype != DataType.INDEFINITE_STRING:
+            raise ValueError(f"Expected {dtype} but got {inner.dtype}")
+        super().__init__(dtype=dtype)
+        self.inner: ProgramElement[str] = inner
+
+    def __call__(self, record: Record) -> str:
+        return self.inner(record)
+
+    def __str__(self):
+        return f"String({self.inner})"
+
+
+def as_string(value: ProgramElement) -> ProgramElement[str]:
+    if value.dtype == DataType.NUMBER:
+        return value
+    return _AsString(value)
+
+
+class _AsNumber(ProgramElement[Decimal]):
+    def __init__(self, inner: ProgramElement):
+        dtype = DataType.NUMBER
+        if inner.dtype != dtype and inner.dtype != DataType.INDEFINITE_STRING:
+            raise ValueError(f"Expected {dtype} but got {inner.dtype}")
+        super().__init__(dtype=dtype)
         self.inner = inner
 
     def __call__(self, record: Record) -> Decimal:
-        inner_value = self.inner(record)
-        inner_number = _astype(inner_value, self.inner.dtype, self.dtype)
-        assert isinstance(inner_number, Decimal)
-        return -inner_number
+        value = self.inner(record)
+        if isinstance(value, Decimal):
+            return value
+        assert isinstance(
+            value, str
+        ), f"{self.__class__.__name__}: Invalid input {value!r}"
+        return Decimal(value)
+
+    def __str__(self):
+        return f"Number({self.inner})"
+
+
+def as_number(value: ProgramElement) -> ProgramElement[Decimal]:
+    if value.dtype == DataType.NUMBER:
+        return value
+    return _AsNumber(value)
+
+
+def as_boolean(value: ProgramElement) -> ProgramElement[bool]:
+    if value.dtype == DataType.BOOLEAN:
+        return value
+    raise ValueError(f"Expected BOOLEAN but got {value.dtype}")
+
+
+def as_type(value: ProgramElement, dtype: DataType) -> ProgramElement:
+    if dtype == value.dtype:
+        return value
+    if dtype == DataType.STRING:
+        return as_string(value)
+    if dtype == DataType.NUMBER:
+        return as_number(value)
+    if dtype == DataType.BOOLEAN:
+        return as_boolean(value)
+    raise ValueError(f"Expecting type {dtype} but got {value.dtype}")
+
+
+class _StringEncodeNumber(ProgramElement[str]):
+    """Encode a number as a string."""
+
+    def __init__(self, inner: ProgramElement[Decimal]):
+        self.inner = inner
+
+    def __call__(self, record: Record) -> str:
+        return str(self.inner(record))
+
+    def __str__(self):
+        return f"{self.__class__.__name__}({self.inner})"
+
+
+class _StringEncodeBoolean(ProgramElement[str]):
+    """Encode a Boolean as a string."""
+
+    def __init__(self, inner: ProgramElement[bool]):
+        self.inner = inner
+
+    def __call__(self, record: Record) -> str:
+        return "true" if self.inner(record) else "false"
+
+    def __str__(self):
+        return f"{self.__class__.__name__}({self.inner})"
+
+
+def string_encode(value: ProgramElement) -> ProgramElement[str]:
+    """Encode the given value as a string."""
+    if value.dtype in (DataType.STRING, DataType.INDEFINITE_STRING):
+        return value
+    if value.dtype == DataType.NUMBER:
+        return _StringEncodeNumber(value)
+    if value.dtype == DataType.BOOLEAN:
+        return _StringEncodeBoolean(value)
+    raise ValueError(f"No string encoding for value of type {value.dtype}")
+
+
+class UnaryMinus(ProgramElement[Decimal]):
+    def __init__(self, inner: ProgramElement):
+        super().__init__(dtype=DataType.NUMBER)
+        self.inner = as_number(inner)
+
+    def __call__(self, record: Record) -> Decimal:
+        return -self.inner(record)
 
     def __str__(self):
         return f"-({self.inner})"
 
 
-class BinaryOperator(ProgramElement):
+class BinaryOperator(ProgramElement[T], Generic[T, T1, T2]):
     def __init__(
         self,
         left: ProgramElement,
         right: ProgramElement,
-        op: Callable[[Any, Any], Any],
-        dtype: Union[DataType, Callable[[DataType, DataType], DataType]],
-        dtype_in: Optional[DataType] = None,
+        op: Callable[[T1, T2], T],
+        dtype: DataType,
+        dtype_left: Optional[DataType] = None,
+        dtype_right: Optional[DataType] = None,
     ):
-        if isinstance(dtype, DataType) and dtype_in is None:
-            dtype_in = dtype
-
-        if dtype_in is not None:
-            _check_compatible(left.dtype, dtype_in)
-            _check_compatible(right.dtype, dtype_in)
-
-        if not isinstance(dtype, DataType):
-            # Rely on the dtype() function to do additional error checking
-            dtype = dtype(left.dtype, right.dtype)
-
         super().__init__(dtype=dtype)
-        self.left = left
-        self.right = right
-        self.op = op
-        self.dtype_in = dtype_in
+        if dtype_left is None:
+            dtype_left = dtype
+        if dtype_right is None:
+            dtype_right = dtype
+        self.left: ProgramElement[T1] = as_type(left, dtype_left)
+        self.right: ProgramElement[T2] = as_type(right, dtype_right)
+        self.op: Callable[[T1, T2], T] = op
 
-    def __call__(self, record: Record) -> ValueType:
+    def __call__(self, record: Record) -> T:
         left_value = self.left(record)
         right_value = self.right(record)
-        if self.dtype_in is not None:
-            left_value = _astype(left_value, self.left.dtype, self.dtype_in)
-            right_value = _astype(right_value, self.right.dtype, self.dtype_in)
         return self.op(left_value, right_value)
 
     def __str__(self):
         return f"{self.left} .{self.op.__name__}. {self.right}"
 
 
-class ValueComparisonOperator(BinaryOperator):
+class ValueComparisonOperator(BinaryOperator[bool, Any, Any]):
     """Compare two values."""
 
     def __init__(
@@ -148,11 +254,16 @@ class ValueComparisonOperator(BinaryOperator):
         if dtype_in not in (DataType.STRING, DataType.NUMBER):
             raise ValueError("Comparison only defined for strings and numbers")
         super().__init__(
-            left=left, right=right, op=op, dtype=DataType.BOOLEAN, dtype_in=dtype_in
+            left=left,
+            right=right,
+            op=op,
+            dtype=DataType.BOOLEAN,
+            dtype_left=dtype_in,
+            dtype_right=dtype_in,
         )
 
 
-class Match(ProgramElement):
+class Match(ProgramElement[bool]):
     def __init__(
         self,
         pattern: str,
@@ -167,14 +278,12 @@ class Match(ProgramElement):
             self.pattern = re.compile(self.pattern, flags)
         elif case_insensitive:
             self.pattern = self.pattern.lower()
-        self.string = string
-        _check_compatible(string.dtype, DataType.STRING)
+        self.string = as_string(string)
         self.case_insensitive = case_insensitive
 
     def __call__(self, record: Record) -> bool:
         pattern = self.pattern
         string = self.string(record)
-        assert isinstance(string, str)
         if isinstance(pattern, str):
             if self.case_insensitive:
                 string = string.lower()
@@ -186,27 +295,22 @@ class Match(ProgramElement):
         return f"{self.string} ~ {self.pattern}"
 
 
-class UnaryNot(ProgramElement):
+class UnaryNot(ProgramElement[bool]):
     def __init__(self, inner: ProgramElement):
         super().__init__(dtype=DataType.BOOLEAN)
-        _check_compatible(inner.dtype, self.dtype)
-        self.inner = inner
+        self.inner = as_boolean(inner)
 
     def __call__(self, record: Record) -> bool:
-        inner_value = _astype(self.inner(record), self.inner.dtype, self.dtype)
-        assert isinstance(inner_value, bool)
-        return not inner_value
+        return not self.inner(record)
 
     def __str__(self):
         return "!({self.inner})"
 
 
-class Conjunction(ProgramElement):
+class Conjunction(ProgramElement[bool]):
     def __init__(self, parts: Sequence[ProgramElement]):
         super().__init__(dtype=DataType.BOOLEAN)
-        for part in parts:
-            _check_compatible(part.dtype, self.dtype)
-        self.parts = parts
+        self.parts = [as_boolean(part) for part in parts]
 
     def __call__(self, record: Record) -> bool:
         # Short-circuiting evaluation
@@ -216,12 +320,10 @@ class Conjunction(ProgramElement):
         return " & ".join(str(part) for part in self.parts)
 
 
-class Disjunction(ProgramElement):
+class Disjunction(ProgramElement[bool]):
     def __init__(self, parts: Sequence[ProgramElement]):
         super().__init__(dtype=DataType.BOOLEAN)
-        for part in parts:
-            _check_compatible(part.dtype, self.dtype)
-        self.parts = parts
+        self.parts = [as_boolean(part) for part in parts]
 
     def __call__(self, record: Record) -> bool:
         # Short-circuiting evaluation
@@ -231,34 +333,27 @@ class Disjunction(ProgramElement):
         return "\n".join(f"| {part}" for part in self.parts)
 
 
-class Assignment(ProgramElement):
+class Assignment(ProgramElement[None]):
     def __init__(self, name: str, value: ProgramElement):
         super().__init__(dtype=DataType.NONE)
         self.name = name
-        self.value = value
+        self.value = string_encode(value)
 
     def __call__(self, record: Record) -> None:
-        value = self.value(record)
-        value_str = _to_string(value)
-        record[self.name] = value_str
+        record[self.name] = self.value(record)
 
     def __str__(self):
         return f"{{{self.name}}} {self.value}"
 
 
-class Rule(ProgramElement):
+class Rule(ProgramElement[None]):
     def __init__(self, condition: ProgramElement, assignments: Sequence[Assignment]):
         super().__init__(dtype=DataType.NONE)
-        _check_compatible(condition.dtype, DataType.BOOLEAN)
-        self.condition = condition
+        self.condition = as_boolean(condition)
         self.assignments = assignments
 
     def __call__(self, record: Record) -> None:
-        condition = _astype(
-            self.condition(record), self.condition.dtype, DataType.BOOLEAN
-        )
-        assert isinstance(condition, bool)
-        if condition:
+        if self.condition(record):
             for assignment in self.assignments:
                 assignment(record)
 
@@ -268,7 +363,7 @@ class Rule(ProgramElement):
         )
 
 
-class Program(ProgramElement):
+class Program(ProgramElement[None]):
     def __init__(self, rules: Sequence[Rule]):
         self.rules = rules
         self.assigned_fields: Tuple[str, ...] = tuple(
@@ -293,51 +388,3 @@ class Program(ProgramElement):
 
     def __str__(self):
         return "\n".join(str(r) for r in self.rules)
-
-
-def _astype(value: ValueType, dtype_in: DataType, dtype_out: DataType) -> ValueType:
-    """Convert from one type to another using compatible casts.
-
-    The only compatible casts are
-    INDEFINITE_STRING => STRING
-    INDEFINITE_STRING => NUMBER
-    """
-    if dtype_in == DataType.INDEFINITE_STRING:
-        assert isinstance(value, str)
-        if dtype_out == DataType.STRING:
-            return value
-        elif dtype_out == DataType.NUMBER:
-            return Decimal(value)
-
-    if dtype_in == dtype_out:
-        return value
-
-    raise ValueError(f"Expecting {dtype_out} but got {dtype_in}")
-
-
-def _check_compatible(actual: DataType, expected: DataType) -> None:
-    """Check type allowing for compatible casts.
-
-    Raises a value error if `actual` is incompatible with `expected`.
-    """
-    if actual not in (expected, DataType.INDEFINITE_STRING) or (
-        actual == DataType.INDEFINITE_STRING
-        and expected not in (DataType.NUMBER, DataType.STRING)
-    ):
-        raise ValueError(f"Expected type {expected} but got {actual}")
-
-
-def _to_string(value: ValueType) -> str:
-    """Converte a value to string.
-
-    Not restricted by compatible casting.
-    """
-    if isinstance(value, str):
-        return value
-    if isinstance(value, Decimal):
-        return str(value)
-    if value is True:
-        return "true"
-    if value is False:
-        return "false"
-    raise TypeError(f"No conversion from {value} to str")
