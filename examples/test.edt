@@ -1,5 +1,6 @@
 # Test edict features
 case_insensitive_match true
+default_field description
 
 if true then
 	foo = "bar"
@@ -21,9 +22,7 @@ then
 	{account number} = "1234"
 
 # You can add a new field
-if
-| date < "2020-02-01"
-then
+if date < "2020-02-01" then
 	new_field = "2"
 
 # And use it here
@@ -34,19 +33,17 @@ then
 	new_field_comment = "small"
 
 # Check for missing new_field
-if
-| new_field == ""
-then
+if new_field == "" then
 	new_field_comment = "missing"
 
 if # Comments can go here
 # here
-| description~"Pear" # here
+| "Pear" # here
 then # here
 	# here
 	comment = "pearly" # or here
 
 if
-| description ~ "pear"
+| "pear"
 then
 	comment = "Cost: " . amount

@@ -121,7 +121,7 @@ class _TransformToProgram(lark.Transformer):
 
     def header_default_field(self, args):
         (identifier,) = args
-        self._context["default_field"] = identifier.name
+        self._context["default_field"] = identifier
 
     def headers(self, args):
         assert all(x is None for x in args), "Not all headers were processed"
@@ -135,6 +135,9 @@ class _TransformToProgram(lark.Transformer):
         elif t_value.type == "NUMBER":
             assert isinstance(t_value.value, Decimal)
             dtype = program.DataType.NUMBER
+        elif t_value.type == "REGEX_STRING":
+            assert isinstance(t_value.value, str)
+            dtype = program.DataType.REGEX
         elif t_value.type in ("TRUE", "FALSE"):
             assert isinstance(t_value.value, bool)
             dtype = program.DataType.BOOLEAN
@@ -147,6 +150,17 @@ class _TransformToProgram(lark.Transformer):
         (t_name,) = args
         assert isinstance(t_name.value, str)
         return program.Identifier(t_name.value)
+
+    def _as_boolean(self, value: program.ProgramElement) -> program.ProgramElement:
+        """Try to convert the given value to a Boolean
+
+        Applies implicit matching to string and regex objects."""
+        if value.dtype in (program.DataType.STRING, program.DataType.REGEX):
+            default_field = self._context.get("default_field")
+            if default_field is None:
+                raise ValueError("Must set `default_field` to use implicit matching.")
+            return self._make_match(pattern=value, string=default_field)
+        return value
 
     def u_expr(self, args):
         if len(args) == 1:
@@ -190,48 +204,47 @@ class _TransformToProgram(lark.Transformer):
 
         left, t_op, right = args
         if t_op.type == "MATCH":
-            return self._make_match(t_pattern=right, string=left)
+            return self._make_match(pattern=right, string=left)
         else:
             return program.ValueComparisonOperator(
                 left=left, right=right, op=_OPERATOR_FUNCTIONS[t_op.type]
             )
 
-    def default_match_expr(self, args):
-        (t_pattern,) = args
-        try:
-            field = self._context["default_field"]
-        except KeyError:
-            raise ValueError("Must specify 'default_field' when using ':' conditions")
-
-        return self._make_match(t_pattern=t_pattern, string=program.Identifier(field))
-
     def _make_match(
-        self, t_pattern: lark.Token, string: program.ProgramElement
-    ) -> program.Match:
-        return program.Match(
-            pattern=t_pattern.value,
-            string=string,
-            is_regex=(t_pattern.type == "REGEX_STRING"),
-            case_insensitive=self._context.get("case_insensitive", False),
-        )
+        self, pattern: program.ProgramElement, string: program.ProgramElement
+    ) -> Union[program.Match, program.SubString]:
+        case_insensitive = self._context.get("case_insensitive", False)
+        if isinstance(pattern, program.Literal):
+            if pattern.dtype == program.DataType.STRING:
+                return program.SubString(
+                    substring=pattern, string=string, case_insensitive=case_insensitive
+                )
+            if pattern.dtype == program.DataType.REGEX:
+                return program.Match(
+                    pattern=pattern, string=string, case_insensitive=case_insensitive
+                )
+        raise ValueError("Match pattern must be a STRING or REGEX literal")
 
     def not_expr(self, args):
         if len(args) == 1:
             return args[0]
 
         _, inner = args
+        inner = self._as_boolean(inner)
         return program.UnaryNot(inner)
 
     def and_expr(self, args):
         if len(args) == 1:
             return args[0]
 
+        args = [self._as_boolean(arg) for arg in args]
         return program.Conjunction(args)
 
     def or_expr(self, args):
         if len(args) == 1:
             return args[0]
 
+        args = [self._as_boolean(arg) for arg in args]
         return program.Disjunction(args)
 
     def assignment(self, args):
@@ -240,6 +253,7 @@ class _TransformToProgram(lark.Transformer):
 
     def rule(self, args):
         condition, *assignments = args
+        condition = self._as_boolean(condition)
         return program.Rule(condition=condition, assignments=assignments)
 
     def start(self, args):

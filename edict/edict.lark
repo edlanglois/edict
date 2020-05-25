@@ -18,9 +18,8 @@ rule: "if" _expression "then" _assignments
 // Record values are cast to/from other types automatically.
 // Ambiguities are resolved in favour of strings.
 
-literal: QUOTED_STRING | NUMBER | _boolean
+literal: QUOTED_STRING | NUMBER | REGEX_STRING | _boolean
 identifier: CNAME | BRACED_IDENTIFIER
-_match_literal: QUOTED_STRING | REGEX_STRING
 
 _atom: literal | identifier | "(" _expression ")"
 
@@ -41,7 +40,7 @@ m_expr: u_expr | m_expr "*" u_expr
 a_expr: m_expr | a_expr ( PLUSMINUS | DOT ) m_expr
 
 // Comparison expression
-comp_expr: a_expr | a_expr _comparison_op a_expr | a_expr MATCH _match_literal
+comp_expr: a_expr | a_expr _comparison_op a_expr | a_expr MATCH literal
 
 // Logical not
 not_expr: comp_expr | BANG not_expr
@@ -49,9 +48,7 @@ not_expr: comp_expr | BANG not_expr
 and_expr: not_expr ( "&" not_expr )*
 // Logical or
 // At least one term but the first can optionally start with an operator
-or_expr: and_expr _or_part* | _or_part+
-_or_part: "|" and_expr | ":" default_match_expr
-default_match_expr: _match_literal
+or_expr: "|"? and_expr ( "|" and_expr )*
 
 _expression: or_expr
 

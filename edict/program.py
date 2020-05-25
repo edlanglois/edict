@@ -4,7 +4,16 @@ from __future__ import annotations
 import re
 from decimal import Decimal
 from enum import Enum
-from typing import Any, Callable, Generic, Optional, Sequence, Tuple, TypeVar, Union
+from typing import (  # NamedTuple,
+    Any,
+    Callable,
+    Generic,
+    Optional,
+    Sequence,
+    Tuple,
+    TypeVar,
+    Union,
+)
 
 from edict.types import Record
 
@@ -21,6 +30,7 @@ __all__ = [
     "ProgramElement",
     "Record",
     "Rule",
+    "SubString",
     "UnaryMinus",
     "UnaryNot",
     "ValueComparisonOperator",
@@ -33,14 +43,32 @@ __all__ = [
 
 
 class DataType(Enum):
+    """Runtime data types in an Edict program.
+
+    Attributes:
+       NONE: The type of expressions that have no value.
+       STRING: A string.
+       NUMBER: A decimal number.
+       BOOLEAN: A boolean value.
+       INDEFINITE_STRING: A string that can be cast to other types.
+           Record values have this type.
+       REGEX: A regular expression.
+    """
+
     NONE = 0
     STRING = 1
     NUMBER = 2
     BOOLEAN = 3
     INDEFINITE_STRING = 4
+    REGEX = 5
 
     def __str__(self):
         return self.name
+
+
+# class ProgramContext(NamedTuple):
+#     default_match_field: Optional[str] = None
+#     case_insensitive: bool = False
 
 
 T = TypeVar("T", str, bool, Decimal, None)
@@ -144,6 +172,10 @@ def as_number(value: ProgramElement) -> ProgramElement[Decimal]:
 def as_boolean(value: ProgramElement) -> ProgramElement[bool]:
     if value.dtype == DataType.BOOLEAN:
         return value
+    # XXX
+    # if value.dtype in (DataType.STRING, DataType.REGEX):
+    #     if context.default_match_field is None:
+    #         raise ValueError(f"Must set default_match_field to use
     raise ValueError(f"Expected BOOLEAN but got {value.dtype}")
 
 
@@ -266,33 +298,46 @@ class ValueComparisonOperator(BinaryOperator[bool, Any, Any]):
 class Match(ProgramElement[bool]):
     def __init__(
         self,
-        pattern: str,
+        pattern: Literal[str],
         string: ProgramElement,
-        is_regex: bool,
         case_insensitive: bool = False,
     ):
         super().__init__(dtype=DataType.BOOLEAN)
-        self.pattern: Union[str, re.Pattern[str]] = pattern
-        if is_regex:
+        if pattern.dtype == DataType.REGEX:
             flags = re.IGNORECASE if case_insensitive else 0
-            self.pattern = re.compile(self.pattern, flags)
-        elif case_insensitive:
-            self.pattern = self.pattern.lower()
+            self.compiled_pattern = re.compile(pattern.value, flags)
+        self.string = as_string(string)
+
+    def __call__(self, record: Record) -> bool:
+        string = self.string(record)
+        return bool(self.compiled_pattern.match(string))
+
+    def __str__(self):
+        return f"{self.string} ~ {self.compiled_pattern}"
+
+
+class SubString(ProgramElement[bool]):
+    def __init__(
+        self,
+        substring: Literal[str],
+        string: ProgramElement,
+        case_insensitive: bool = False,
+    ):
+        super().__init__(dtype=DataType.BOOLEAN)
+        self.substring = substring.value
+        if case_insensitive:
+            self.substring = self.substring.lower()
         self.string = as_string(string)
         self.case_insensitive = case_insensitive
 
     def __call__(self, record: Record) -> bool:
-        pattern = self.pattern
         string = self.string(record)
-        if isinstance(pattern, str):
-            if self.case_insensitive:
-                string = string.lower()
-            return pattern in string
-        else:
-            return bool(pattern.search(string))
+        if self.case_insensitive:
+            string = string.lower()
+        return self.substring in string
 
     def __str__(self):
-        return f"{self.string} ~ {self.pattern}"
+        return f"{self.string} ~ {self.substring!r}"
 
 
 class UnaryNot(ProgramElement[bool]):
