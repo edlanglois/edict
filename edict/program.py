@@ -4,16 +4,7 @@ from __future__ import annotations
 import re
 from decimal import Decimal
 from enum import Enum
-from typing import (  # NamedTuple,
-    Any,
-    Callable,
-    Generic,
-    Optional,
-    Sequence,
-    Tuple,
-    TypeVar,
-    Union,
-)
+from typing import Any, Callable, Generic, Optional, Sequence, Set, TypeVar, Union
 
 from edict.types import Record
 
@@ -30,6 +21,7 @@ __all__ = [
     "ProgramElement",
     "Record",
     "Rule",
+    "SubProgram",
     "SubString",
     "UnaryMinus",
     "UnaryNot",
@@ -378,7 +370,12 @@ class Disjunction(ProgramElement[bool]):
         return "\n".join(f"| {part}" for part in self.parts)
 
 
-class Assignment(ProgramElement[None]):
+class SubProgram(ProgramElement[None]):
+    def assigned_fields(self) -> Set[str]:
+        raise NotImplementedError
+
+
+class Assignment(SubProgram):
     def __init__(self, name: str, value: ProgramElement):
         super().__init__(dtype=DataType.NONE)
         self.name = name
@@ -387,49 +384,60 @@ class Assignment(ProgramElement[None]):
     def __call__(self, record: Record) -> None:
         record[self.name] = self.value(record)
 
+    def assigned_fields(self) -> Set[str]:
+        return {self.name}
+
     def __str__(self):
-        return f"{{{self.name}}} {self.value}"
+        return f"{{{self.name}}} = {self.value}"
 
 
 class Rule(ProgramElement[None]):
-    def __init__(self, condition: ProgramElement, assignments: Sequence[Assignment]):
+    def __init__(self, condition: ProgramElement, statements: Sequence[_Statement]):
         super().__init__(dtype=DataType.NONE)
         self.condition = as_boolean(condition)
-        self.assignments = assignments
+        self.statements = statements
 
     def __call__(self, record: Record) -> None:
         if self.condition(record):
-            for assignment in self.assignments:
-                assignment(record)
+            for statements in self.statements:
+                statements(record)
+
+    def assigned_fields(self) -> Set[str]:
+        return {
+            name
+            for statement in self.statements
+            for name in statement.assigned_fields()
+        }
 
     def __str__(self):
         return f"if\n{self.condition}\nthen\n" + "".join(
-            f"\t{a}\n" for a in self.assignments
+            f"\t{s}\n" for s in self.statements
         )
+
+
+_Statement = Union[Assignment, Rule]
 
 
 class Program(ProgramElement[None]):
-    def __init__(self, rules: Sequence[Rule]):
-        self.rules = rules
-        self.assigned_fields: Tuple[str, ...] = tuple(
-            set(
-                [
-                    assignment.name
-                    for rule in self.rules
-                    for assignment in rule.assignments
-                ]
-            )
-        )
+    def __init__(self, statements: Sequence[_Statement]):
+        self.statements = statements
 
     def __call__(self, record: Record) -> None:
-        for rule in self.rules:
-            rule(record)
+        for statement in self.statements:
+            statement(record)
 
     def transform(self, record: Record) -> Record:
         """Return a transformed copy of a record."""
         new_record = record.copy()
         self(new_record)
         return new_record
+
+    def assigned_fields(self) -> Set[str]:
+        return {
+            name
+            for statement in self.statements
+            for name in statement.assigned_fields()
+        }
 
     def __str__(self):
         return "\n".join(str(r) for r in self.rules)

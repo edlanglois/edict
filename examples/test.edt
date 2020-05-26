@@ -2,11 +2,11 @@
 case_insensitive_match true
 default_field description
 
-if true then
-	foo = "bar"
+foo = "bar"
 
 if false then
 	foo = "baz"
+fi
 
 # Test parsing with field names that are keywords
 if
@@ -14,16 +14,19 @@ if
 then
 	{if} = "then"
 	{then} = "if"
+fi
 
 # Test account field containing spaces
 if
 | {account number} == "4321"
 then
 	{account number} = "1234"
+fi
 
 # You can add a new field
 if date < "2020-02-01" then
 	new_field = "2"
+fi
 
 # And use it here
 if
@@ -31,10 +34,12 @@ if
 | new_field != "" & new_field < 10  # Unquoted, interpreted as number
 then
 	new_field_comment = "small"
+fi
 
 # Check for missing new_field
 if new_field == "" then
 	new_field_comment = "missing"
+fi
 
 if # Comments can go here
 # here
@@ -42,8 +47,15 @@ if # Comments can go here
 then # here
 	# here
 	comment = "pearly" # or here
+fi
 
-if
-| "pear"
-then
+if "pear" then
 	comment = "Cost: " . amount
+fi
+
+# Check nested conditions
+if "2020-02-03" then
+	if "red" then
+		comment = "A red onion."
+	fi
+fi

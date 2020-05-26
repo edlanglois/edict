@@ -1,6 +1,7 @@
 """Edict class"""
 from __future__ import annotations
 
+import itertools
 from typing import TYPE_CHECKING, TextIO, Union
 
 from edict.protocols import PROTOCOLS
@@ -26,7 +27,11 @@ class Edict:
         """
         # Merge orignal and added keys, preseving order without duplicates
         program = self._program
-        fields = tuple({x: None for x in data.fields + program.assigned_fields}.keys())
+        fields = tuple(
+            {
+                x: None for x in itertools.chain(data.fields, program.assigned_fields())
+            }.keys()
+        )
         return RecordStream(
             fields=fields,
             records=(program.transform(record) for record in data.records),

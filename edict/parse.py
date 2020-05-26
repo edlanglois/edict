@@ -252,14 +252,14 @@ class _TransformToProgram(lark.Transformer):
         return program.Assignment(name=identifier.name, value=value)
 
     def rule(self, args):
-        condition, *assignments = args
+        condition, *statements = args
         condition = self._as_boolean(condition)
-        return program.Rule(condition=condition, assignments=assignments)
+        return program.Rule(condition=condition, statements=statements)
 
     def start(self, args):
-        header, *rules = args
+        header, *statements = args
         del header
-        return program.Program(rules=rules)
+        return program.Program(statements=statements)
 
 
 if __name__ == "__main__":

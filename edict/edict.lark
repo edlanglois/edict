@@ -1,4 +1,4 @@
-start: headers _rules
+start: headers _statements
 
 headers: _header*
 _header: header_default_field
@@ -8,8 +8,10 @@ header_case_insensitive_match: "case_insensitive_match" _boolean
 // header_true_value: "true_value" string_value
 // header_false_falue: "false_value" string_value
 
-_rules: rule*
-rule: "if" _expression "then" _assignments
+_statements: _statement*
+_statement: rule | assignment
+
+rule: "if" _expression "then" _statements "fi"
 
 // The record values processed by edict are represented as strings
 // However, expressions in the edict language have a simple type system used for
