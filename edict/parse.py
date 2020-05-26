@@ -162,6 +162,10 @@ class _TransformToProgram(lark.Transformer):
             return self._make_match(pattern=value, string=default_field)
         return value
 
+    def call(self, args):
+        t_name, *fargs = args
+        return program.function_call(t_name.value, fargs)
+
     def u_expr(self, args):
         if len(args) == 1:
             return args[0]

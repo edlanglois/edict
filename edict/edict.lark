@@ -25,10 +25,8 @@ identifier: CNAME | BRACED_IDENTIFIER
 
 _atom: literal | identifier | "(" _expression ")"
 
-// Extension: Add casting as a function call
-// primary: atom | call
-// call: CNAME "(" expression ")"
-_primary: _atom
+_primary: _atom | call
+call: CNAME "(" ( _expression "," )* _expression? ")"
 
 // Unary expression
 // - :: Numeric negation

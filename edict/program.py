@@ -30,6 +30,7 @@ __all__ = [
     "as_number",
     "as_string",
     "as_type",
+    "function_call",
     "string_encode",
 ]
 
@@ -218,6 +219,48 @@ def string_encode(value: ProgramElement) -> ProgramElement[str]:
     if value.dtype == DataType.BOOLEAN:
         return _StringEncodeBoolean(value)
     raise ValueError(f"No string encoding for value of type {value.dtype}")
+
+
+class _FunctionCall(ProgramElement[T]):
+    name: str
+
+    def __init__(self, args: Sequence[ProgramElement], dtype: DataType):
+        super().__init__(dtype=dtype)
+        self.args = args
+
+    def __str__(self):
+        arg_str = ",".join(str(arg) for arg in self.args)
+        return f"{self.name}({arg_str})"
+
+
+class _FReadDate(_FunctionCall[str]):
+    """Read a date and format as an ISO 8601 string."""
+
+    name = "read_date"
+
+    def __init__(self, args: Sequence[ProgramElement]):
+        super().__init__(args, dtype=DataType.STRING)
+        date_string, date_format = args
+        self.date_string = as_string(date_string)
+        self.date_format = as_string(date_format)
+
+    def __call__(self, record: Record) -> str:
+        import datetime
+
+        return (
+            datetime.datetime.strptime(
+                self.date_string(record), self.date_format(record)
+            )
+            .date()
+            .isoformat()
+        )
+
+
+_FUNCTIONS = {f.name: f for f in (_FReadDate,)}
+
+
+def function_call(name: str, args: Sequence[ProgramElement]):
+    return _FUNCTIONS[name](args)
 
 
 class UnaryMinus(ProgramElement[Decimal]):
