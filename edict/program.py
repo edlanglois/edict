@@ -165,10 +165,6 @@ def as_number(value: ProgramElement) -> ProgramElement[Decimal]:
 def as_boolean(value: ProgramElement) -> ProgramElement[bool]:
     if value.dtype == DataType.BOOLEAN:
         return value
-    # XXX
-    # if value.dtype in (DataType.STRING, DataType.REGEX):
-    #     if context.default_match_field is None:
-    #         raise ValueError(f"Must set default_match_field to use
     raise ValueError(f"Expected BOOLEAN but got {value.dtype}")
 
 
