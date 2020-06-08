@@ -4,18 +4,7 @@ from __future__ import annotations
 import re
 from decimal import Decimal
 from enum import Enum
-from typing import (
-    Any,
-    Callable,
-    Generic,
-    Iterable,
-    List,
-    Optional,
-    Sequence,
-    Set,
-    TypeVar,
-    Union,
-)
+from typing import Any, Callable, Generic, Iterable, List, Optional, Sequence, TypeVar
 
 from edict.types import Record
 from edict.utils import OrderedSet
@@ -34,7 +23,6 @@ __all__ = [
     "ProgramElement",
     "Record",
     "Rule",
-    "SubProgram",
     "SubString",
     "UnaryMinus",
     "UnaryNot",
@@ -479,11 +467,11 @@ class Fields(_Executable):
     """Specify an explicit set of fields, dropping all others."""
 
     def __init__(self, fields: Iterable[str]):
-        self.fields = OrderedSet(fields)
+        self._fields = OrderedSet(fields)
 
     def __call__(self, record: Record) -> None:
         new_record = {}
-        for field in self.fields:
+        for field in self._fields:
             try:
                 new_record[field] = record[field]
             except KeyError:
@@ -493,7 +481,7 @@ class Fields(_Executable):
 
     def _update_fields(self, fields: OrderedSet[str]) -> None:
         fields.clear()
-        fields.update(self.fields)
+        fields.update(self._fields)
 
 
 class Program(_Executable):
