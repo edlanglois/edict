@@ -2,8 +2,9 @@
 # description
 # date
 # amount
-default_field description
-case_insensitive_match true # False by default
+@default_field("description")
+@case_insensitive_match(true)
+@output_fields("date","description","account1","account2","amount","comment")
 
 account1 = "assets:bank-account"
 account2 = "income:unknown"

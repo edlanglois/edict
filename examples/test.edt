@@ -1,6 +1,6 @@
 # Test edict features
-case_insensitive_match true
-default_field description
+set_case_insensitive_match(true)
+set_default_field("description")
 
 foo = "bar"
 

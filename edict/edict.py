@@ -27,11 +27,7 @@ class Edict:
         """
         # Merge orignal and added keys, preseving order without duplicates
         program = self._program
-        fields = tuple(
-            {
-                x: None for x in itertools.chain(data.fields, program.assigned_fields())
-            }.keys()
-        )
+        fields = program.fields(data.fields)
         return RecordStream(
             fields=fields,
             records=(program.transform(record) for record in data.records),

@@ -4,9 +4,21 @@ from __future__ import annotations
 import re
 from decimal import Decimal
 from enum import Enum
-from typing import Any, Callable, Generic, Optional, Sequence, Set, TypeVar, Union
+from typing import (
+    Any,
+    Callable,
+    Generic,
+    Iterable,
+    List,
+    Optional,
+    Sequence,
+    Set,
+    TypeVar,
+    Union,
+)
 
 from edict.types import Record
+from edict.utils import OrderedSet
 
 __all__ = [
     "Assignment",
@@ -14,6 +26,7 @@ __all__ = [
     "Conjunction",
     "DataType",
     "Disjunction",
+    "Fields",
     "Identifier",
     "Literal",
     "Match",
@@ -165,10 +178,6 @@ def as_number(value: ProgramElement) -> ProgramElement[Decimal]:
 def as_boolean(value: ProgramElement) -> ProgramElement[bool]:
     if value.dtype == DataType.BOOLEAN:
         return value
-    # XXX
-    # if value.dtype in (DataType.STRING, DataType.REGEX):
-    #     if context.default_match_field is None:
-    #         raise ValueError(f"Must set default_match_field to use
     raise ValueError(f"Expected BOOLEAN but got {value.dtype}")
 
 
@@ -413,12 +422,21 @@ class Disjunction(ProgramElement[bool]):
         return "\n".join(f"| {part}" for part in self.parts)
 
 
-class SubProgram(ProgramElement[None]):
-    def assigned_fields(self) -> Set[str]:
+class _Executable(ProgramElement[None]):
+    """Execute some behaviour on a record."""
+
+    def fields(self, input_fields: Iterable[str]) -> List[str]:
+        fields = OrderedSet(input_fields)
+        self._update_fields(fields)
+        return list(fields)
+
+    def _update_fields(self, fields: OrderedSet[str]) -> None:
         raise NotImplementedError
 
 
-class Assignment(SubProgram):
+class Assignment(_Executable):
+    """Assign a value to a field."""
+
     def __init__(self, name: str, value: ProgramElement):
         super().__init__(dtype=DataType.NONE)
         self.name = name
@@ -427,15 +445,17 @@ class Assignment(SubProgram):
     def __call__(self, record: Record) -> None:
         record[self.name] = self.value(record)
 
-    def assigned_fields(self) -> Set[str]:
-        return {self.name}
+    def _update_fields(self, fields: OrderedSet[str]) -> None:
+        fields.add(self.name)
 
     def __str__(self):
         return f"{{{self.name}}} = {self.value}"
 
 
-class Rule(ProgramElement[None]):
-    def __init__(self, condition: ProgramElement, statements: Sequence[_Statement]):
+class Rule(_Executable):
+    """Conditionally execute some statements"""
+
+    def __init__(self, condition: ProgramElement, statements: Sequence[_Executable]):
         super().__init__(dtype=DataType.NONE)
         self.condition = as_boolean(condition)
         self.statements = statements
@@ -445,12 +465,9 @@ class Rule(ProgramElement[None]):
             for statements in self.statements:
                 statements(record)
 
-    def assigned_fields(self) -> Set[str]:
-        return {
-            name
-            for statement in self.statements
-            for name in statement.assigned_fields()
-        }
+    def _update_fields(self, fields: OrderedSet[str]) -> None:
+        for statement in self.statements:
+            statement._update_fields(fields)
 
     def __str__(self):
         return f"if\n{self.condition}\nthen\n" + "".join(
@@ -458,11 +475,29 @@ class Rule(ProgramElement[None]):
         )
 
 
-_Statement = Union[Assignment, Rule]
+class Fields(_Executable):
+    """Specify an explicit set of fields, dropping all others."""
+
+    def __init__(self, fields: Iterable[str]):
+        self.fields = OrderedSet(fields)
+
+    def __call__(self, record: Record) -> None:
+        new_record = {}
+        for field in self.fields:
+            try:
+                new_record[field] = record[field]
+            except KeyError:
+                pass
+        record.clear()
+        record.update(new_record)
+
+    def _update_fields(self, fields: OrderedSet[str]) -> None:
+        fields.clear()
+        fields.update(self.fields)
 
 
-class Program(ProgramElement[None]):
-    def __init__(self, statements: Sequence[_Statement]):
+class Program(_Executable):
+    def __init__(self, statements: Sequence[_Executable]):
         self.statements = statements
 
     def __call__(self, record: Record) -> None:
@@ -475,12 +510,9 @@ class Program(ProgramElement[None]):
         self(new_record)
         return new_record
 
-    def assigned_fields(self) -> Set[str]:
-        return {
-            name
-            for statement in self.statements
-            for name in statement.assigned_fields()
-        }
+    def _update_fields(self, fields: OrderedSet[str]) -> None:
+        for statement in self.statements:
+            statement._update_fields(fields)
 
     def __str__(self):
         return "\n".join(str(r) for r in self.rules)

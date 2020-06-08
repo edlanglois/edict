@@ -115,16 +115,34 @@ class _TransformToProgram(lark.Transformer):
     def __init__(self):
         self._context = {}
 
-    def header_case_insensitive_match(self, args):
-        (t_value,) = args
-        self._context["case_insensitive"] = t_value.value
+    def _header_case_insensitive_match(self, value):
+        if value.dtype != program.DataType.BOOLEAN:
+            raise ValueError(f"Expected BOOLEAN but got {value.dtype}")
+        self._context["case_insensitive"] = value.value
 
-    def header_default_field(self, args):
-        (identifier,) = args
-        self._context["default_field"] = identifier
+    def _header_default_field(self, identifier):
+        if identifier.dtype != program.DataType.STRING:
+            raise ValueError(f"Expected STRING but got {identifier.dtype}")
+        self._context["default_field"] = program.Identifier(identifier.value)
 
-    def headers(self, args):
-        assert all(x is None for x in args), "Not all headers were processed"
+    def _header_output_fields(self, *fields):
+        field_names = []
+        for field in fields:
+            if field.dtype != program.DataType.STRING:
+                raise ValueError(f"Expected STRING but got {field.dtype}")
+            field_names.append(field.value)
+        self._context["output_fields"] = field_names
+
+    def header_call(self, args):
+        name, *fargs = args
+        assert all(isinstance(farg, program.Literal) for farg in fargs)
+        {
+            "case_insensitive_match": self._header_case_insensitive_match,
+            "default_field": self._header_default_field,
+            "output_fields": self._header_output_fields,
+        }[name](*fargs)
+
+    def header(self, args):
         return self._context
 
     def literal(self, args):
@@ -262,7 +280,12 @@ class _TransformToProgram(lark.Transformer):
 
     def start(self, args):
         header, *statements = args
-        del header
+        try:
+            output_fields = header["output_fields"]
+        except KeyError:
+            pass
+        else:
+            statements.append(program.Fields(output_fields))
         return program.Program(statements=statements)
 
 

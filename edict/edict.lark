@@ -1,12 +1,7 @@
-start: headers _statements
+start: header _statements
 
-headers: _header*
-_header: header_default_field
-       | header_case_insensitive_match
-header_default_field: "default_field" identifier
-header_case_insensitive_match: "case_insensitive_match" _boolean
-// header_true_value: "true_value" string_value
-// header_false_falue: "false_value" string_value
+header: header_call*
+header_call: "@" CNAME "(" ( literal "," )* literal? ")"
 
 _statements: _statement*
 _statement: rule | assignment
