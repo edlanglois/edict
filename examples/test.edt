@@ -2,6 +2,8 @@
 @case_insensitive_match(true)
 @default_field("description")
 
+date = read_date(date, "%d/%m/%Y")
+
 foo = "bar"
 
 if false then
@@ -54,7 +56,7 @@ if "pear" then
 fi
 
 # Check nested conditions
-if "2020-02-03" then
+if date == "2020-02-03" then
 	if "red" then
 		comment = "A red onion."
 	fi
