@@ -5,7 +5,7 @@ import argparse
 import contextlib
 import pathlib
 import sys
-from typing import BinaryIO, Generator, Optional, TextIO, Union
+from typing import Generator, Optional, TextIO
 
 from edict import Edict
 
@@ -42,16 +42,12 @@ def parse_args(argv=None):
 @contextlib.contextmanager
 def open_(
     filename: Optional[pathlib.Path], mode="r", **kwargs
-) -> Generator[Union[TextIO, BinaryIO], None, None]:
+) -> Generator[TextIO, None, None]:
     if filename is None:
         if mode == "r":
-            f: Union[TextIO, BinaryIO] = sys.stdin
-        elif mode == "rb":
-            f = sys.stdin.buffer
+            f = sys.stdin
         elif mode == "w":
             f = sys.stdout
-        elif mode == "wb":
-            f = sys.stdout.buffer
         else:
             raise ValueError(f"No standard IO for mode {mode}")
         yield f
@@ -68,6 +64,6 @@ def main(argv=None):
     """
     args = parse_args(argv)
     transformer = Edict.load(args.edict_file)
-    with open_(args.input_file, "rb") as fin:
-        with open_(args.output_file, "wb") as fout:
+    with open_(args.input_file, "r") as fin:
+        with open_(args.output_file, "w") as fout:
             transformer.apply(fin, fout)
