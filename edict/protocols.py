@@ -1,7 +1,6 @@
 """IO Protocols"""
 from __future__ import annotations
 
-import os
 from typing import Callable, Dict, TextIO
 
 from edict.types import RecordStream
@@ -28,7 +27,7 @@ def read_csv(f: TextIO) -> RecordStream:
 def write_csv(f: TextIO, data: RecordStream) -> None:
     import csv
 
-    writer = csv.DictWriter(f, data.fields, lineterminator=os.linesep)
+    writer = csv.DictWriter(f, data.fields, lineterminator="\n")
     writer.writeheader()
     writer.writerows(data.records)
 
