@@ -13,6 +13,11 @@ class OrderedSet(Generic[T]):
         else:
             self._data = {x: None for x in elems}
 
+    def __eq__(self, other: Any):
+        if isinstance(other, OrderedSet):
+            return self._data == other._data
+        return NotImplemented
+
     def __contains__(self, item: Any) -> bool:
         return item in self._data
 
