@@ -1,7 +1,6 @@
 """Edict class"""
 from __future__ import annotations
 
-import itertools
 from typing import TYPE_CHECKING, TextIO, Union
 
 from edict.protocols import READERS, WRITERS
