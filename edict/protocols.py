@@ -1,14 +1,15 @@
 """IO Protocols"""
 from __future__ import annotations
 
-from typing import Callable, Dict, TextIO, Tuple
+from typing import Callable, Dict, TextIO
 
 from edict.types import RecordStream
 
 __all__ = [
+    "READERS",
+    "WRITERS",
     "read_csv",
     "write_csv",
-    "PROTOCOLS",
 ]
 
 
@@ -34,6 +35,9 @@ def write_csv(f: TextIO, data: RecordStream) -> None:
 _Reader = Callable[[TextIO], RecordStream]
 _Writer = Callable[[TextIO, RecordStream], None]
 
-PROTOCOLS: Dict[str, Tuple[_Reader, _Writer]] = {
-    "csv": (read_csv, write_csv),
+READERS: Dict[str, _Reader] = {
+    "csv": read_csv,
+}
+WRITERS: Dict[str, _Writer] = {
+    "csv": write_csv,
 }

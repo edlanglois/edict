@@ -4,7 +4,7 @@ from __future__ import annotations
 import itertools
 from typing import TYPE_CHECKING, TextIO, Union
 
-from edict.protocols import PROTOCOLS
+from edict.protocols import READERS, WRITERS
 from edict.types import RecordStream
 
 if TYPE_CHECKING:
@@ -15,8 +15,11 @@ if TYPE_CHECKING:
 class Edict:
     """Transform dictionaries"""
 
-    def apply(self, in_: TextIO, out: TextIO, protocol="csv") -> None:
-        read, write = PROTOCOLS[protocol]
+    def apply(
+        self, in_: TextIO, out: TextIO, read_protocol="csv", write_protocol="csv"
+    ) -> None:
+        read = READERS[read_protocol]
+        write = WRITERS[write_protocol]
         write(out, self.transform(read(in_)))
         pass
 
