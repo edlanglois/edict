@@ -21,7 +21,7 @@ def read_csv(f: TextIO) -> RecordStream:
     if fields is None:
         raise ValueError("First line must contain field names.")
 
-    return RecordStream(fields=tuple(fields), records=reader)
+    return RecordStream(fields=list(fields), records=reader)
 
 
 def write_csv(f: TextIO, data: RecordStream) -> None:

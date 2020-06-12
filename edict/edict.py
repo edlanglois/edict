@@ -28,7 +28,6 @@ class Edict:
 
         Note that the individual records are modified in-place.
         """
-        # Merge orignal and added keys, preseving order without duplicates
         program = self._program
         fields = program.fields(data.fields)
         return RecordStream(
