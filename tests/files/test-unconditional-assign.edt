@@ -1,0 +1,9 @@
+foo = 1
+
+if true then
+	bar = 2
+fi
+
+if false then
+	baz = 3
+fi
