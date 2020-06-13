@@ -1,0 +1,11 @@
+if a == "" then
+  a_empty = 1
+fi
+
+if a == "0" then
+  b = 0
+fi
+
+if c == "1" then
+  c_1 = 1
+fi
