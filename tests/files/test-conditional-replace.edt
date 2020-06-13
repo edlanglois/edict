@@ -1,0 +1,4 @@
+is_a = 0
+if text == "a" then
+  is_a = 1
+fi
