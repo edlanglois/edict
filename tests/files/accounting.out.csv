@@ -1,0 +1,11 @@
+date,description,account1,account2,amount,comment
+2020-01-05,Payment from apple company,assets:bank-account,income:unknown,10.00,
+2020-01-06,Bought Apples,assets:bank-account,expenses:groceries,-3.00,Fruit and Vegetables
+2020-01-20,Pearly oysters,assets:bank-account,expenses:unknown,-5.23,
+2020-02-01,Some expense,assets:bank-account,expenses:one-time-thing,-13.37,
+2020-02-02,Pear shack,assets:bank-account,expenses:groceries,-4.12,Fruit and Vegetables
+2020-02-03,Bought red onions,assets:bank-account,expenses:groceries,-6.72,Fruit and Vegetables
+2020-02-03,Bought yellow onions,assets:bank-account,expenses:groceries,-3.00,Fruit and Vegetables
+2020-02-20,Direct deposit,assets:bank-account,income:new-job,20.00,
+2020-02-25,Bought pears,assets:bank-account,expenses:groceries,-2.00,Fruit and Vegetables
+2020-02-26,sweet potato,assets:bank-account,expenses:groceries,-1.50,Fruit and Vegetables

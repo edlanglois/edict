@@ -18,20 +18,17 @@ fi
 if
 | "sweet potato"
 | /(red|yellow) onion/
-| /pear\b/
+| /pears?\b/
 | "apple" & amount < 0
 then
 	account2 = "expenses:groceries"
 	comment = "Fruit and Vegetables"
 fi
 
-if date == "2020-02-01" & amount == -13.37
-then
+if date == "2020-02-01" & amount == -13.37 then
 	account2 = "expenses:one-time-thing"
 fi
 
-if
-| "Direct deposit" & date >= "2020-02-10"
-then
+if "Direct deposit" & date >= "2020-02-10" then
 	account2 = "income:new-job"
 fi
