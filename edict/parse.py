@@ -197,10 +197,14 @@ class _TransformToProgram(lark.Transformer):
         if len(args) == 1:
             return args[0]
 
-        left, right = args
-        return program.BinaryOperator(
-            left, right, operator.mul, program.DataType.NUMBER
-        )
+        left, t_op, right = args
+        if t_op.value == "*":
+            op = operator.mul
+        elif t_op.value == "/":
+            op = operator.truediv
+        else:
+            assert False, f"Unexpected operator: {t_op}"
+        return program.BinaryOperator(left, right, op, program.DataType.NUMBER)
 
     def a_expr(self, args):
         if len(args) == 1:

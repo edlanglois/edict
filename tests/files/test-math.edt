@@ -8,9 +8,9 @@ if "mul" then
   z = x * y
 fi
 
-# if "div" then
-#   z = x / y
-# fi
+if "div" then
+  z = x / y
+fi
 
 if "add" then
   z = x + y

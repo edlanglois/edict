@@ -29,7 +29,7 @@ call: CNAME "(" ( _expression "," )* _expression? ")"
 u_expr: _primary | PLUSMINUS u_expr
 
 // Multiplication priority expression
-m_expr: u_expr | m_expr "*" u_expr
+m_expr: u_expr | m_expr ( STAR | SLASH ) u_expr
 
 // Addition priority expression
 a_expr: m_expr | a_expr ( PLUSMINUS | DOT ) m_expr
@@ -83,6 +83,8 @@ PLUS: "+"
 MINUS: "-"
 BANG: "!"
 DOT: "."
+STAR: "*"
+SLASH: "/"
 
 _comparison_op: EQ | NE | LT | LE | GT | GE
 EQ: "=="
