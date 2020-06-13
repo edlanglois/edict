@@ -342,7 +342,7 @@ class Match(ProgramElement[bool]):
 
     def __call__(self, record: Record) -> bool:
         string = self.string(record)
-        return bool(self.compiled_pattern.match(string))
+        return bool(self.compiled_pattern.search(string))
 
     def __str__(self):
         return f"{self.string} ~ {self.compiled_pattern}"
