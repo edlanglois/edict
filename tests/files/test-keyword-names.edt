@@ -1,0 +1,5 @@
+# Test parsing with field names that are keywords
+if {if} == "fi" then
+	{if} = "then"
+	{then} = "if"
+fi
