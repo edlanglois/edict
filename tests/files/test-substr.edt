@@ -1,0 +1,19 @@
+# Beginning of field
+if text ~ "Hello" then
+  a = 1
+fi
+
+# Within field
+if text ~ "World" then
+  b = 1
+fi
+
+# case mismatch
+if text ~ "world" then
+  c = 1
+fi
+
+# complte mismatch
+if text ~ "foo" then
+  d = 1
+fi
