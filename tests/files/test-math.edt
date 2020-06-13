@@ -1,0 +1,21 @@
+@default_field("op")
+
+if "minus" then
+  z = -x
+fi
+
+if "mul" then
+  z = x * y
+fi
+
+# if "div" then
+#   z = x / y
+# fi
+
+if "add" then
+  z = x + y
+fi
+
+if "sub" then
+  z = x - y
+fi
