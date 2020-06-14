@@ -1,0 +1,12 @@
+@default_field("x")
+
+if "foo" | "bar" then
+	y = 1
+fi
+
+if
+| "bar"
+| "baz"
+then
+	z = 1
+fi
