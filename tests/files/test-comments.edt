@@ -1,0 +1,7 @@
+if # Comments can go here
+# here
+| x ~ "foo" # here
+then # here
+	# here
+	x = "fooo" # here
+fi # here
