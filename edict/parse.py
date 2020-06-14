@@ -115,7 +115,7 @@ class _TransformToProgram(lark.Transformer):
     def __init__(self):
         self._context = {}
 
-    def _header_case_insensitive_match(self, value):
+    def _header_match_case_insensitive(self, value):
         if value.dtype != program.DataType.BOOLEAN:
             raise ValueError(f"Expected BOOLEAN but got {value.dtype}")
         self._context["case_insensitive"] = value.value
@@ -137,7 +137,7 @@ class _TransformToProgram(lark.Transformer):
         name, *fargs = args
         assert all(isinstance(farg, program.Literal) for farg in fargs)
         {
-            "case_insensitive_match": self._header_case_insensitive_match,
+            "match_case_insensitive": self._header_match_case_insensitive,
             "default_field": self._header_default_field,
             "output_fields": self._header_output_fields,
         }[name](*fargs)

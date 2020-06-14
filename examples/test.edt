@@ -1,47 +1,9 @@
 # Test edict features
-@case_insensitive_match(true)
+@match_case_insensitive(true)
 @default_field("description")
 
 date = read_date(date, "%d/%m/%Y")
 
-foo = "bar"
-
-if false then
-	foo = "baz"
-fi
-
-# Test parsing with field names that are keywords
-if
-| description != "Apples"
-then
-	{if} = "then"
-	{then} = "if"
-fi
-
-# Test account field containing spaces
-if
-| {account number} == "4321"
-then
-	{account number} = "1234"
-fi
-
-# You can add a new field
-if date < "2020-02-01" then
-	new_field = "2"
-fi
-
-# And use it here
-if
-# Numeric comparisons require that the field exists, short circuit out if not
-| new_field != "" & new_field < 10  # Unquoted, interpreted as number
-then
-	new_field_comment = "small"
-fi
-
-# Check for missing new_field
-if new_field == "" then
-	new_field_comment = "missing"
-fi
 
 if # Comments can go here
 # here

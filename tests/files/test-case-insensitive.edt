@@ -1,0 +1,18 @@
+@default_field("x")
+@match_case_insensitive(true)
+
+a = 0
+b = 0
+c = 0
+
+if "foo" then
+	a = 1
+fi
+
+if /[a-z]+/ then
+	b = 1
+fi
+
+if x == "foo" then
+	c = 1
+fi
