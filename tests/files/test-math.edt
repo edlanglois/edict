@@ -19,3 +19,7 @@ fi
 if "sub" then
   z = x - y
 fi
+
+if "mod" then
+  z = x % y
+fi

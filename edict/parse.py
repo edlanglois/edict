@@ -109,6 +109,12 @@ _OPERATOR_FUNCTIONS = {
 }
 
 
+def _decimal_mod(a: Decimal, b: Decimal) -> Decimal:
+    """a % b with sign matching b, same as mod on python number types."""
+    # Decimal % matches the sign of a instead
+    return (a % b).copy_sign(b)
+
+
 class _TransformToProgram(lark.Transformer):
     """Transform to a structured Edict program"""
 
@@ -202,6 +208,8 @@ class _TransformToProgram(lark.Transformer):
             op = operator.mul
         elif t_op.value == "/":
             op = operator.truediv
+        elif t_op.value == "%":
+            op = _decimal_mod
         else:
             assert False, f"Unexpected operator: {t_op}"
         return program.BinaryOperator(left, right, op, program.DataType.NUMBER)
