@@ -4,7 +4,18 @@ from __future__ import annotations
 import re
 from decimal import Decimal
 from enum import Enum
-from typing import Any, Callable, Generic, Iterable, List, Optional, Sequence, TypeVar
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Generic,
+    Iterable,
+    List,
+    Optional,
+    Sequence,
+    Type,
+    TypeVar,
+)
 
 from edict.types import Record
 from edict.utils import OrderedSet
@@ -253,7 +264,23 @@ class _FReadDate(_FunctionCall[str]):
         )
 
 
-_FUNCTIONS = {f.name: f for f in (_FReadDate,)}
+class _FNum(_FunctionCall[Decimal]):
+    """Interpret a value as a number."""
+
+    name = "num"
+
+    def __init__(self, args: Sequence[ProgramElement]):
+        super().__init__(args, dtype=DataType.NUMBER)
+        (value,) = args
+        self.value = as_number(value)
+
+    def __call__(self, record: Record) -> Decimal:
+        return self.value(record)
+
+
+_FUNCTIONS: Dict[str, Callable[[Sequence[ProgramElement]], _FunctionCall]] = {
+    f.name: f for f in (_FNum, _FReadDate)  # type: ignore
+}
 
 
 def function_call(name: str, args: Sequence[ProgramElement]):

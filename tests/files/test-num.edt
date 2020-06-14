@@ -1,0 +1,2 @@
+{z num} = x == num(y)
+{z str} = x == y
