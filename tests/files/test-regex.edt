@@ -1,0 +1,12 @@
+@default_field("x")
+
+a = 0
+b = 0
+
+if /foo/ then
+	a = 1
+fi
+
+if /[a-z]+-[0-9a-zA-Z]+/ then
+	b = 1
+fi
