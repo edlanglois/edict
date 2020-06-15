@@ -1,11 +1,11 @@
 if a == "" then
-  a_empty = 1
+	a_empty = 1
 fi
 
 if a == "0" then
-  b = 0
+	b = 0
 fi
 
 if c == "1" then
-  c_1 = 1
+	c_1 = 1
 fi
