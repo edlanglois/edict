@@ -55,7 +55,8 @@ _assignments: assignment*
 
 // Tokens
 // ======
-%import common.CNAME
+// %import common.CNAME
+CNAME: /[^\W\d]\w*/
 
 // Quoted string and identifier string escape sequences
 // \\ => \
@@ -75,7 +76,8 @@ BRACED_IDENTIFIER: "{" /(?:[^\/}]|\\.)*/ "}"
 // Regex string escape sequences: \/ => / (plus all python regex escapes)
 REGEX_STRING: "/" /(?:[^\/\\]|\\.)*/ "/"
 
-%import common.NUMBER
+// %import common.NUMBER
+NUMBER: /[-+]?\d+(\.\d*)?/
 _boolean: TRUE | FALSE
 FALSE.2: "false"
 TRUE.2: "true"
@@ -100,8 +102,9 @@ GE: ">="
 MATCH: "~"
 
 // Ignores
-%import common.WS
+// %import common.WS
+WS.-1: /\s+/
 %ignore WS
 
-COMMENT: "#" /[^\n]/*
+COMMENT: /#[^\n]*/
 %ignore COMMENT
