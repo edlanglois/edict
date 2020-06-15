@@ -71,6 +71,7 @@ CNAME: /[^\W\d]\w*/
 // \xhh => Character with hex value hh
 // \uxxxx => Character with 16-bit hex value xxxx
 // \Uxxxxxx => Character with 32-bit hex value xxxxxx
+// TODO: Prevent from crossing line boundaries
 QUOTED_STRING: "\"" /(?:[^"\\]|\\.)*/ "\""
 BRACED_IDENTIFIER: "{" /(?:[^\/}]|\\.)*/ "}"
 // Regex string escape sequences: \/ => / (plus all python regex escapes)
