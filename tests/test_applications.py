@@ -19,7 +19,7 @@ class Application(NamedTuple):
     write_protocol: str
 
 
-PROTOCOLS = {".csv": "csv"}
+PROTOCOLS = {".csv": "csv", ".journal": "hledger"}
 
 applications = []
 for edict_file in edict_files:

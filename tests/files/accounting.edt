@@ -4,9 +4,10 @@
 # amount
 @default_field("description")
 @match_case_insensitive(true)
-@output_fields("date","description","account1","account2","amount","comment")
+@output_fields("date","description","account1","account2","amount1","comment")
 
 account1 = "assets:bank-account"
+amount1 = amount
 account2 = "income:unknown"
 date = read_date(date, "%d/%m/%Y")
 

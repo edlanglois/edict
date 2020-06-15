@@ -1,4 +1,4 @@
-date,description,account1,account2,amount,comment
+date,description,account1,account2,amount1,comment
 2020-01-05,Payment from apple company,assets:bank-account,income:unknown,10.00,
 2020-01-06,Bought Apples,assets:bank-account,expenses:groceries,-3.00,Fruit and Vegetables
 2020-01-20,Pearl Jewellery,assets:bank-account,expenses:unknown,-5.23,
