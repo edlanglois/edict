@@ -13,6 +13,7 @@ from typing import (
     List,
     Optional,
     Sequence,
+    Tuple,
     TypeVar,
 )
 
@@ -33,6 +34,7 @@ __all__ = [
     "ProgramElement",
     "Record",
     "Rule",
+    "Statements",
     "SubString",
     "UnaryMinus",
     "UnaryNot",
@@ -439,6 +441,9 @@ class Disjunction(ProgramElement[bool]):
 class _Executable(ProgramElement[None]):
     """Execute some behaviour on a record."""
 
+    def __init__(self):
+        super().__init__(dtype=DataType.NONE)
+
     def fields(self, input_fields: Iterable[str]) -> List[str]:
         fields = OrderedSet(input_fields)
         self._update_fields(fields)
@@ -448,11 +453,33 @@ class _Executable(ProgramElement[None]):
         raise NotImplementedError
 
 
+class Statements(_Executable):
+    """A sequence of executable statements."""
+
+    def __init__(self, statements: Sequence[_Executable]):
+        super().__init__()
+        self.statements = statements
+
+    def __call__(self, record: Record) -> None:
+        for statement in self.statements:
+            statement(record)
+
+    def _update_fields(self, fields: OrderedSet[str]) -> None:
+        for statement in self.statements:
+            statement._update_fields(fields)
+
+    def __str__(self):
+        return "\n".join(str(statement) for statement in self.statements)
+
+    def append(self, _Executable):
+        self.statements.append(_Executable)
+
+
 class Assignment(_Executable):
     """Assign a value to a field."""
 
     def __init__(self, name: str, value: ProgramElement):
-        super().__init__(dtype=DataType.NONE)
+        super().__init__()
         self.name = name
         self.value = string_encode(value)
 
@@ -469,30 +496,50 @@ class Assignment(_Executable):
 class Rule(_Executable):
     """Conditionally execute some statements"""
 
-    def __init__(self, condition: ProgramElement, statements: Sequence[_Executable]):
-        super().__init__(dtype=DataType.NONE)
-        self.condition = as_boolean(condition)
-        self.statements = statements
+    def __init__(
+        self,
+        ifthens: Iterable[Tuple[ProgramElement, _Executable]],
+        else_=Optional[_Executable],
+    ):
+        super().__init__()
+        self.ifthens = [
+            (as_boolean(condition), statement) for condition, statement in ifthens
+        ]
+        if not self.ifthens:
+            raise ValueError("Must specify at least one condition in a rule.")
+        self.else_ = else_
 
     def __call__(self, record: Record) -> None:
-        if self.condition(record):
-            for statements in self.statements:
-                statements(record)
+        for condition, statement in self.ifthens:
+            if condition(record):
+                statement(record)
+                return
+        if self.else_ is not None:
+            self.else_(record)
 
     def _update_fields(self, fields: OrderedSet[str]) -> None:
-        for statement in self.statements:
+        for _, statement in self.ifthens:
             statement._update_fields(fields)
+        if self.else_ is not None:
+            self.else_._update_fields(fields)
 
     def __str__(self):
-        return f"if\n{self.condition}\nthen\n" + "".join(
-            f"\t{s}\n" for s in self.statements
-        )
+        ifthen, *elifthens = self.ifthens
+        condition, statement = ifthen
+        lines = [f"if {condition} then\n{statement}"]
+        for condition, statement in elifthens:
+            lines.append(f"elif {condition} then\n{statement}")
+        if self.else_ is not None:
+            lines.append(f"else\n{self.else_}")
+        lines.append("fi")
+        return "\n".join(lines)
 
 
 class Fields(_Executable):
     """Specify an explicit set of fields, dropping all others."""
 
     def __init__(self, fields: Iterable[str]):
+        super().__init__()
         self._fields = OrderedSet(fields)
 
     def __call__(self, record: Record) -> None:
@@ -511,12 +558,12 @@ class Fields(_Executable):
 
 
 class Program(_Executable):
-    def __init__(self, statements: Sequence[_Executable]):
+    def __init__(self, statements: _Executable):
+        super().__init__()
         self.statements = statements
 
     def __call__(self, record: Record) -> None:
-        for statement in self.statements:
-            statement(record)
+        self.statements(record)
 
     def transform(self, record: Record) -> Record:
         """Return a transformed copy of a record."""
@@ -525,8 +572,7 @@ class Program(_Executable):
         return new_record
 
     def _update_fields(self, fields: OrderedSet[str]) -> None:
-        for statement in self.statements:
-            statement._update_fields(fields)
+        self.statements._update_fields(fields)
 
     def __str__(self):
-        return "\n".join(str(r) for r in self.rules)
+        return f"{self.statements}\n"

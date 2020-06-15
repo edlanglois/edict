@@ -1,0 +1,12 @@
+@output_fields("fizzbuzz")
+@default_field("i")
+
+if i % 15 == 0 then
+	fizzbuzz = "fizzbuzz"
+elif i % 5 == 0 then
+	fizzbuzz = "buzz"
+elif i % 3 == 0 then
+	fizzbuzz = "fizz"
+else
+	fizzbuzz = i
+fi

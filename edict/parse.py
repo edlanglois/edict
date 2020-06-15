@@ -286,12 +286,31 @@ class _TransformToProgram(lark.Transformer):
         return program.Assignment(name=identifier.name, value=value)
 
     def rule(self, args):
-        condition, *statements = args
-        condition = self._as_boolean(condition)
-        return program.Rule(condition=condition, statements=statements)
+        ifthens = args
+        if ifthens[-1][0] is None:
+            ifthens, final = ifthens[:-1], ifthens[-1]
+            _, else_ = final
+        else:
+            else_ = None
+        return program.Rule(ifthens, else_)
+
+    def rule_ifthen(self, args):
+        condition, statements = args
+        return (self._as_boolean(condition), statements)
+
+    def rule_else(self, args):
+        (statements,) = args
+        return (None, statements)
+
+    def statements(self, args):
+        if len(args) == 1:
+            return args[0]
+        return program.Statements(args)
 
     def start(self, args):
-        header, *statements = args
+        header, statements = args
+        if not isinstance(statements, program.Statements):
+            statements = program.Statements([statements])
         try:
             output_fields = header["output_fields"]
         except KeyError:
