@@ -1,0 +1,3 @@
+if description ~ "Jewellery" then
+	account2 = "expenses:jewellery"
+fi

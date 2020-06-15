@@ -35,7 +35,7 @@ class Edict:
         )
 
     @staticmethod
-    def load(file: Union[str, bytes, os.PathLike]):
+    def load(file: Union[str, bytes, os.PathLike]) -> Edict:
         import edict.parse
 
         return Edict(edict.parse.parse_file(file))

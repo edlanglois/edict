@@ -8,6 +8,7 @@ import sys
 from typing import Generator, Optional, TextIO
 
 from edict import Edict
+from edict.protocols import READERS, WRITERS
 
 
 def parse_args(argv=None):
@@ -21,21 +22,37 @@ def parse_args(argv=None):
     """
     parser = argparse.ArgumentParser(
         description=__doc__.splitlines()[0] if __doc__ else None,
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
-    parser.add_argument("edict_file", type=pathlib.Path, help="Edict file to parse.")
     parser.add_argument(
-        "input_file",
-        nargs="?",
+        "-i",
+        "--input-file",
         type=pathlib.Path,
-        help="Read data from this file instead of STDIN.",
+        help="Read records from this file (default: STDIN)",
+    )
+    parser.add_argument(
+        "-r",
+        "--input-format",
+        type=str,
+        choices=READERS,
+        default="csv",
+        help="Input format to read (default: csv)",
     )
     parser.add_argument(
         "-o",
         "--output-file",
         type=pathlib.Path,
-        help="Output to this file instead of STDOUT.",
+        help="Write records to this file (default: STDOUT)",
     )
+    parser.add_argument(
+        "-w",
+        "--output-format",
+        type=str,
+        choices=WRITERS,
+        default="csv",
+        help="Output format to write (default: csv)",
+    )
+    parser.add_argument("edict_file", type=pathlib.Path, nargs="*", help="Edict file")
+
     return parser.parse_args(argv)
 
 
@@ -63,7 +80,12 @@ def main(argv=None):
         argv: A list of argument strings to use instead of sys.argv.
     """
     args = parse_args(argv)
-    transformer = Edict.load(args.edict_file)
+    transformers = [Edict.load(f) for f in args.edict_file]
+    read = READERS[args.input_format]
+    write = WRITERS[args.output_format]
     with open_(args.input_file, "r") as fin:
         with open_(args.output_file, "w") as fout:
-            transformer.apply(fin, fout)
+            data = read(fin)
+            for transformer in transformers:
+                data = transformer.transform(data)
+            write(fout, data)
