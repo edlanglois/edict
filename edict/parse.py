@@ -121,7 +121,7 @@ class _TransformToProgram(lark.Transformer):
     def __init__(self):
         self._context = {}
 
-    def _header_match_case_insensitive(self, value):
+    def _header_case_insensitive(self, value):
         if value.dtype != program.DataType.BOOLEAN:
             raise ValueError(f"Expected BOOLEAN but got {value.dtype}")
         self._context["case_insensitive"] = value.value
@@ -143,7 +143,7 @@ class _TransformToProgram(lark.Transformer):
         name, *fargs = args
         assert all(isinstance(farg, program.Literal) for farg in fargs)
         {
-            "match_case_insensitive": self._header_match_case_insensitive,
+            "case_insensitive": self._header_case_insensitive,
             "default_field": self._header_default_field,
             "output_fields": self._header_output_fields,
         }[name](*fargs)
@@ -183,7 +183,10 @@ class _TransformToProgram(lark.Transformer):
             default_field = self._context.get("default_field")
             if default_field is None:
                 raise ValueError("Must set `default_field` to use implicit matching.")
-            return self._make_match(pattern=value, string=default_field)
+            case_insensitive = self._context.get("case_insensitive", False)
+            return self._make_match(
+                pattern=value, string=default_field, case_insensitive=case_insensitive
+            )
         return value
 
     def call(self, args):
@@ -237,17 +240,25 @@ class _TransformToProgram(lark.Transformer):
             return args[0]
 
         left, t_op, right = args
+        case_insensitive = self._context.get("case_insensitive", False)
         if t_op.type == "MATCH":
-            return self._make_match(pattern=right, string=left)
+            return self._make_match(
+                pattern=right, string=left, case_insensitive=case_insensitive
+            )
         else:
             return program.ValueComparisonOperator(
-                left=left, right=right, op=_OPERATOR_FUNCTIONS[t_op.type]
+                left=left,
+                right=right,
+                op=_OPERATOR_FUNCTIONS[t_op.type],
+                case_insensitive=case_insensitive,
             )
 
     def _make_match(
-        self, pattern: program.ProgramElement, string: program.ProgramElement
+        self,
+        pattern: program.ProgramElement,
+        string: program.ProgramElement,
+        case_insensitive: bool,
     ) -> Union[program.Match, program.SubString]:
-        case_insensitive = self._context.get("case_insensitive", False)
         if isinstance(pattern, program.Literal):
             if pattern.dtype == program.DataType.STRING:
                 return program.SubString(

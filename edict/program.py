@@ -72,11 +72,6 @@ class DataType(Enum):
         return self.name
 
 
-# class ProgramContext(NamedTuple):
-#     default_match_field: Optional[str] = None
-#     case_insensitive: bool = False
-
-
 T = TypeVar("T", str, bool, Decimal, None)
 T1 = TypeVar("T1", str, bool, Decimal, None)
 T2 = TypeVar("T2", str, bool, Decimal, None)
@@ -242,6 +237,19 @@ class _FunctionCall(ProgramElement[T]):
         return f"{self.name}({arg_str})"
 
 
+class _FCasefold(_FunctionCall[str]):
+    """Casefold a string for case insensitive comparison."""
+
+    name = "casefold"
+
+    def __init__(self, args: Sequence[ProgramElement]):
+        super().__init__(args, dtype=DataType.STRING)
+        (self.arg,) = args
+
+    def __call__(self, record: Record) -> str:
+        return self.arg(record).casefold()
+
+
 class _FReadDate(_FunctionCall[str]):
     """Read a date and format as an ISO 8601 string."""
 
@@ -280,7 +288,7 @@ class _FNum(_FunctionCall[Decimal]):
 
 
 _FUNCTIONS: Dict[str, Callable[[Sequence[ProgramElement]], _FunctionCall]] = {
-    f.name: f for f in (_FNum, _FReadDate)  # type: ignore
+    f.name: f for f in (_FCasefold, _FNum, _FReadDate)  # type: ignore
 }
 
 
@@ -336,6 +344,7 @@ class ValueComparisonOperator(BinaryOperator[bool, Any, Any]):
         left: ProgramElement,
         right: ProgramElement,
         op: Callable[[Any, Any], bool],
+        case_insensitive: bool = False,
     ):
         # Default to STRING if neither is concrete
         dtype_in = DataType.STRING
@@ -345,6 +354,9 @@ class ValueComparisonOperator(BinaryOperator[bool, Any, Any]):
             dtype_in = right.dtype
         if dtype_in not in (DataType.STRING, DataType.NUMBER):
             raise ValueError("Comparison only defined for strings and numbers")
+        if case_insensitive and dtype_in == DataType.STRING:
+            left = _FCasefold((left,))
+            right = _FCasefold((right,))
         super().__init__(
             left=left,
             right=right,
@@ -385,15 +397,13 @@ class SubString(ProgramElement[bool]):
     ):
         super().__init__(dtype=DataType.BOOLEAN)
         self.substring = substring.value
-        if case_insensitive:
-            self.substring = self.substring.lower()
         self.string = as_string(string)
-        self.case_insensitive = case_insensitive
+        if case_insensitive:
+            self.substring = self.substring.casefold()
+            self.string = _FCasefold((self.string,))
 
     def __call__(self, record: Record) -> bool:
         string = self.string(record)
-        if self.case_insensitive:
-            string = string.lower()
         return self.substring in string
 
     def __str__(self):
