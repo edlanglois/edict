@@ -120,21 +120,24 @@ def write_hleger_journal(f: TextIO, data: RecordStream) -> None:
             amount = record.get(f"amount{n}", "")
             if amount:
                 if currency:
-                    amount = f"{currency} {amount}"
+                    amount = f"{currency}{amount}"
 
                 if unitprice := record.get(f"unitprice{n}"):
                     amount = f"{amount} @ {unitprice}"
                 elif totalprice := record.get(f"totalprice{n}"):
                     amount = f"{amount} @@ {totalprice}"
-                amount = f"  {amount}"
 
             balance = record.get(f"balance{n}", "")
             if balance and currency:
-                balance = f"{currency} {balance}"
+                balance = f"{currency}{balance}"
             if balance:
                 balance = f" = {balance}"
 
-            f.write(f"    {status}{account}{amount}{balance}{comment}\n")
+            suffix = f"{amount}{balance}{comment}"
+            if suffix:
+                suffix = f"  {suffix}"
+
+            f.write(f"    {status}{account}{suffix}\n")
         f.write("\n")
 
 
