@@ -4,31 +4,23 @@ from __future__ import annotations
 import operator
 import re
 from decimal import Decimal
-from typing import TYPE_CHECKING, Any, Callable, Union
+from typing import Any, Callable, Union
 
 import lark
 import pkg_resources
 
 from edict import program
 
-if TYPE_CHECKING:
-    import os
-
-__all__ = ["parse", "parse_file"]
+__all__ = ["parse"]
 
 
 def parse(text: str) -> program.Program:
     parser = _get_parser()
-    return parser.parse(text)
+    # parser.parse() value is the return value of _TransformToProgram.start()
+    return parser.parse(text)  # type: ignore
 
 
-def parse_file(file: Union[str, bytes, os.PathLike]) -> program.Program:
-    parser = _get_parser()
-    with open(file, "r") as f:
-        return parser.parse(f.read())
-
-
-def _get_parser():
+def _get_parser() -> lark.Lark:
     grammar_file = pkg_resources.resource_filename("edict", "edict.lark")
     decode_quoted_string_callback = _make_lexer_callback(_decode_quoted_string)
     lexer_callbacks = {
@@ -337,5 +329,6 @@ if __name__ == "__main__":
     argparser = argparse.ArgumentParser(description="Parse an edict file.")
     argparser.add_argument("file", type=str, help="Edict file")
     args = argparser.parse_args()
-    p = parse_file(args.file)
+    with open(args.file, "r") as f:
+        p = parse(f.read())
     print(p)

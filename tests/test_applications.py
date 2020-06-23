@@ -4,7 +4,7 @@ from typing import NamedTuple
 
 import pytest
 
-from edict import Edict
+import edict
 
 files_dir = pathlib.Path(__file__).parent / "files"
 edict_files = files_dir.glob("*.edt")
@@ -44,7 +44,7 @@ def application(request):
 
 
 def test_application(application):
-    e = Edict.load(application.edict_file)
+    e = edict.load(application.edict_file)
     out = io.StringIO()
     with open(application.in_file, "r") as fin:
         e.apply(

@@ -1,4 +1,4 @@
-"""Classes representing an edict program."""
+"""Classes representing the mapping parts of an edict program."""
 from __future__ import annotations
 
 import re

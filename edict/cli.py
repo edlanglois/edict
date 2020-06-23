@@ -7,7 +7,7 @@ import pathlib
 import sys
 from typing import Generator, Optional, TextIO
 
-from edict import Edict
+from edict import load
 from edict.protocols import READERS, WRITERS
 
 
@@ -80,7 +80,7 @@ def main(argv=None):
         argv: A list of argument strings to use instead of sys.argv.
     """
     args = parse_args(argv)
-    transformers = [Edict.load(f) for f in args.edict_file]
+    transformers = [load(f) for f in args.edict_file]
     read = READERS[args.input_format]
     write = WRITERS[args.output_format]
     with open_(args.input_file, "r") as fin:
