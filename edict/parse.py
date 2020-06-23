@@ -4,17 +4,17 @@ from __future__ import annotations
 import operator
 import re
 from decimal import Decimal
-from typing import Any, Callable, Union
+from typing import Any, Callable, Optional, Tuple, Union
 
 import lark
 import pkg_resources
 
-from edict import program
+from edict import program, stream
 
 __all__ = ["parse"]
 
 
-def parse(text: str) -> program.Program:
+def parse(text: str) -> Tuple[program.Program, Optional[stream.StreamEditor]]:
     parser = _get_parser()
     # parser.parse() value is the return value of _TransformToProgram.start()
     return parser.parse(text)  # type: ignore
@@ -107,38 +107,49 @@ def _decimal_mod(a: Decimal, b: Decimal) -> Decimal:
     return (a % b).copy_sign(b)
 
 
+def _header_case_insensitive(value):
+    if value.dtype != program.DataType.BOOLEAN:
+        raise ValueError(f"Expected BOOLEAN but got {value.dtype}")
+    return value.value
+
+
+def _header_default_field(identifier):
+    if identifier.dtype != program.DataType.STRING:
+        raise ValueError(f"Expected STRING but got {identifier.dtype}")
+    return program.Identifier(identifier.value)
+
+
+def _header_output_fields(*fields):
+    field_names = []
+    for field in fields:
+        if field.dtype != program.DataType.STRING:
+            raise ValueError(f"Expected STRING but got {field.dtype}")
+        field_names.append(field.value)
+    return field_names
+
+
+def _header_pre_transform(name, *args):
+    return stream.STREAM_EDITORS[name.value](*args)
+
+
+HEADERS = {
+    "case_insensitive": _header_case_insensitive,
+    "default_field": _header_default_field,
+    "output_fields": _header_output_fields,
+    "pre_transform": _header_pre_transform,
+}
+
+
 class _TransformToProgram(lark.Transformer):
     """Transform to a structured Edict program"""
 
     def __init__(self):
         self._context = {}
 
-    def _header_case_insensitive(self, value):
-        if value.dtype != program.DataType.BOOLEAN:
-            raise ValueError(f"Expected BOOLEAN but got {value.dtype}")
-        self._context["case_insensitive"] = value.value
-
-    def _header_default_field(self, identifier):
-        if identifier.dtype != program.DataType.STRING:
-            raise ValueError(f"Expected STRING but got {identifier.dtype}")
-        self._context["default_field"] = program.Identifier(identifier.value)
-
-    def _header_output_fields(self, *fields):
-        field_names = []
-        for field in fields:
-            if field.dtype != program.DataType.STRING:
-                raise ValueError(f"Expected STRING but got {field.dtype}")
-            field_names.append(field.value)
-        self._context["output_fields"] = field_names
-
     def header_call(self, args):
         name, *fargs = args
         assert all(isinstance(farg, program.Literal) for farg in fargs)
-        {
-            "case_insensitive": self._header_case_insensitive,
-            "default_field": self._header_default_field,
-            "output_fields": self._header_output_fields,
-        }[name](*fargs)
+        self._context[name] = HEADERS[name](*fargs)
 
     def header(self, args):
         return self._context
@@ -320,7 +331,10 @@ class _TransformToProgram(lark.Transformer):
             pass
         else:
             statements.append(program.Fields(output_fields))
-        return program.Program(statements=statements)
+        return (
+            program.Program(statements=statements),
+            self._context.get("pre_transform"),
+        )
 
 
 if __name__ == "__main__":
@@ -330,5 +344,5 @@ if __name__ == "__main__":
     argparser.add_argument("file", type=str, help="Edict file")
     args = argparser.parse_args()
     with open(args.file, "r") as f:
-        p = parse(f.read())
+        p, _ = parse(f.read())
     print(p)

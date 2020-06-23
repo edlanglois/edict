@@ -1,10 +1,11 @@
 """Edict class"""
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, TextIO, Union
+from typing import TYPE_CHECKING, Optional, TextIO, Union
 
 from edict import parse
 from edict.protocols import READERS, WRITERS
+from edict.stream import StreamEditor
 from edict.types import RecordStream
 
 if TYPE_CHECKING:
@@ -21,8 +22,9 @@ __all__ = [
 class Edict:
     """Transform dictionaries"""
 
-    def __init__(self, program: Program):
+    def __init__(self, program: Program, pre_transform: Optional[StreamEditor]):
         self._program = program
+        self._pre_transform = pre_transform
 
     def apply(
         self, in_: TextIO, out: TextIO, read_protocol="csv", write_protocol="csv"
@@ -38,6 +40,8 @@ class Edict:
         Note that the individual records are modified in-place.
         """
         program = self._program
+        if self._pre_transform:
+            data = self._pre_transform(data)
         fields = program.fields(data.fields)
         return RecordStream(
             fields=fields,
@@ -46,7 +50,8 @@ class Edict:
 
 
 def loads(text: str) -> Edict:
-    return Edict(parse.parse(text))
+    program, pre_transform = parse.parse(text)
+    return Edict(program, pre_transform)
 
 
 def load(file: Union[str, bytes, os.PathLike]) -> Edict:
