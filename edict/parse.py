@@ -3,25 +3,40 @@ from __future__ import annotations
 
 import functools
 import operator
+import os
 import re
 from decimal import Decimal
-from typing import Any, Callable, Optional, Tuple, Union
+from typing import Any, Callable, Dict, Optional, Tuple, Union
 
 import lark
 import pkg_resources
 
 from edict import program, stream
 
-__all__ = ["parse"]
+__all__ = ["parse_file", "parse_text"]
+
+PathLike = Union[str, bytes, os.PathLike]
 
 
-def parse(text: str) -> Tuple[program.Program, Optional[stream.StreamEditor]]:
-    parser = _get_parser()
+def parse_file(file: PathLike) -> Tuple[program.Program, Optional[stream.StreamEditor]]:
+    with open(file, "r") as f:
+        return parse_text(text=f.read(), file_path=str(file))
+
+
+def parse_text(
+    text: str, file_path: Optional[PathLike] = None
+) -> Tuple[program.Program, Optional[stream.StreamEditor]]:
+    parser = _get_parser(file_path=file_path)
     # parser.parse() value is the return value of _TransformToProgram.start()
     return parser.parse(text)  # type: ignore
 
 
-def _get_parser() -> lark.Lark:
+def _get_parser(file_path: Optional[PathLike] = None) -> lark.Lark:
+    """Make a Lark parser for Edict files.
+
+    Args:
+        file_path: The full path of the source file. Used for relative imports.
+    """
     grammar_file = pkg_resources.resource_filename("edict", "edict.lark")
     decode_quoted_string_callback = _make_lexer_callback(_decode_quoted_string)
     lexer_callbacks = {
@@ -35,7 +50,7 @@ def _get_parser() -> lark.Lark:
     return lark.Lark.open(
         grammar_file,
         parser="lalr",
-        transformer=_TransformToProgram(),
+        transformer=_TransformToProgram(file_path=file_path),
         lexer_callbacks=lexer_callbacks,
     )
 
@@ -108,59 +123,76 @@ def _decimal_mod(a: Decimal, b: Decimal) -> Decimal:
     return (a % b).copy_sign(b)
 
 
-def _header_case_insensitive(value):
+def _directive_case_insensitive(context, value):
     if value.dtype != program.DataType.BOOLEAN:
         raise ValueError(f"Expected BOOLEAN but got {value.dtype}")
-    return value.value
+    context["case_insensitive"] = value.value
 
 
-def _header_default_field(identifier):
+def _directive_default_field(context, identifier):
     if identifier.dtype != program.DataType.STRING:
         raise ValueError(f"Expected STRING but got {identifier.dtype}")
-    return program.Identifier(identifier.value)
+    context["default_field"] = program.Identifier(identifier.value)
 
 
-def _header_output_fields(*fields):
+def _directive_output_fields(context, *fields):
     field_names = []
     for field in fields:
         if field.dtype != program.DataType.STRING:
             raise ValueError(f"Expected STRING but got {field.dtype}")
         field_names.append(field.value)
-    return field_names
+    context["output_fields"] = field_names
 
 
-def _header_pre_transform(name, *args):
-    return stream.STREAM_EDITORS[name](*args)
+def _directive_pre_transform(context, name, *args):
+    context["pre_transform"] = stream.STREAM_EDITORS[name](*args)
 
 
-HEADERS = {
-    "case_insensitive": _header_case_insensitive,
-    "default_field": _header_default_field,
-    "output_fields": _header_output_fields,
+HEADER_DIRECTIVES = {
+    "case_insensitive": _directive_case_insensitive,
+    "default_field": _directive_default_field,
+    "output_fields": _directive_output_fields,
+    "reverse": functools.partial(_directive_pre_transform, name="reverse"),
 }
 
-HEADERS_TRANSFORM = {
-    "reverse": functools.partial(_header_pre_transform, name="reverse"),
-}
+
+def _directive_import(context, file):
+    if file.dtype != program.DataType.STRING:
+        raise ValueError(f"Expected STRING but got {file.dtype}")
+    import_file_path = file.value
+    if not os.path.isabs(import_file_path):
+        try:
+            source_path = context["file_path"]
+        except KeyError:
+            raise ValueError("Must set `source_path` for relative imports.")
+        import_file_path = os.path.join(os.path.dirname(source_path), import_file_path)
+
+    subprogram, pre_transform = parse_file(import_file_path)
+    if pre_transform is not None:
+        raise ValueError("Imported files may not define transformations.")
+    return subprogram
+
+
+INLINE_DIRECTIVES = {"import": _directive_import}
 
 
 class _TransformToProgram(lark.Transformer):
     """Transform to a structured Edict program"""
 
-    def __init__(self):
-        self._context = {}
+    def __init__(self, file_path: Optional[PathLike] = None):
+        self._context: Dict[str, Any] = {}
+        if file_path is not None:
+            self._context["file_path"] = file_path
 
-    def header_call(self, args):
+    def header_directive(self, args):
         name, *fargs = args
         assert all(isinstance(farg, program.Literal) for farg in fargs)
-        try:
-            directive = HEADERS[name.value]
-            id_ = name.value
-        except KeyError:
-            directive = HEADERS_TRANSFORM[name.value]
-            id_ = "pre_transform"
+        HEADER_DIRECTIVES[name.value](self._context, *fargs)
 
-        self._context[id_] = directive(*fargs)
+    def inline_directive(self, args):
+        name, *fargs = args
+        return INLINE_DIRECTIVES[name.value](self._context, *fargs)
+        pass
 
     def header(self, args):
         return self._context
@@ -354,6 +386,5 @@ if __name__ == "__main__":
     argparser = argparse.ArgumentParser(description="Parse an edict file.")
     argparser.add_argument("file", type=str, help="Edict file")
     args = argparser.parse_args()
-    with open(args.file, "r") as f:
-        p, _ = parse(f.read())
+    p, _ = parse_file(args.file)
     print(p)

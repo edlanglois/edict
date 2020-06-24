@@ -1,10 +1,17 @@
 start: header statements
 
-header: header_call*
-header_call: "@" CNAME ( "(" ( literal "," )* literal? ")" )?
+header: header_directive*
+
+// Directives are function calls that can be evaluated before running.
+// They may affect the structure of the program
+// Header directives establish some context for the program
+// Inline directives have no scope and generally expand to some code.
+header_directive: "@" _directive
+inline_directive: "@@" _directive
+_directive: CNAME ( "(" ( literal "," )* literal? ")" )?
 
 statements: _statement*
-_statement: rule | assignment
+_statement: rule | assignment | inline_directive
 
 rule: "if" rule_ifthen ( "elif" rule_ifthen )* rule_else? "fi"
 rule_ifthen: _expression "then" statements

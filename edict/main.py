@@ -50,10 +50,10 @@ class Edict:
 
 
 def loads(text: str) -> Edict:
-    program, pre_transform = parse.parse(text)
+    program, pre_transform = parse.parse_text(text)
     return Edict(program, pre_transform)
 
 
 def load(file: Union[str, bytes, os.PathLike]) -> Edict:
-    with open(file, "r") as f:
-        return loads(f.read())
+    program, pre_transform = parse.parse_file(file)
+    return Edict(program, pre_transform)

@@ -1,0 +1,3 @@
+if x == 1 then
+	@@import("extras/test-conditional-import.edt")
+fi
