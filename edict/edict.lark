@@ -1,7 +1,7 @@
 start: header statements
 
 header: header_call*
-header_call: "@" CNAME "(" ( literal "," )* literal? ")"
+header_call: "@" CNAME ( "(" ( literal "," )* literal? ")" )?
 
 statements: _statement*
 _statement: rule | assignment

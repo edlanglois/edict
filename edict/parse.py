@@ -1,6 +1,7 @@
 """Parse edict files."""
 from __future__ import annotations
 
+import functools
 import operator
 import re
 from decimal import Decimal
@@ -129,14 +130,17 @@ def _header_output_fields(*fields):
 
 
 def _header_pre_transform(name, *args):
-    return stream.STREAM_EDITORS[name.value](*args)
+    return stream.STREAM_EDITORS[name](*args)
 
 
 HEADERS = {
     "case_insensitive": _header_case_insensitive,
     "default_field": _header_default_field,
     "output_fields": _header_output_fields,
-    "pre_transform": _header_pre_transform,
+}
+
+HEADERS_TRANSFORM = {
+    "reverse": functools.partial(_header_pre_transform, name="reverse"),
 }
 
 
@@ -149,7 +153,14 @@ class _TransformToProgram(lark.Transformer):
     def header_call(self, args):
         name, *fargs = args
         assert all(isinstance(farg, program.Literal) for farg in fargs)
-        self._context[name] = HEADERS[name](*fargs)
+        try:
+            directive = HEADERS[name.value]
+            id_ = name.value
+        except KeyError:
+            directive = HEADERS_TRANSFORM[name.value]
+            id_ = "pre_transform"
+
+        self._context[id_] = directive(*fargs)
 
     def header(self, args):
         return self._context
