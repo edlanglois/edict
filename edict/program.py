@@ -144,12 +144,19 @@ def as_string(value: ProgramElement) -> ProgramElement[str]:
 
 
 class _AsNumber(ProgramElement[Decimal]):
-    def __init__(self, inner: ProgramElement):
+    def __init__(self, inner: ProgramElement, separator: str = ","):
+        """Initialze an _AsNumber cast.
+
+        Args:
+            inner: The data to cast. Must have type NUMBER or INDEFINITE_STRING
+            separator: The digits separator character.
+        """
         dtype = DataType.NUMBER
         if inner.dtype != dtype and inner.dtype != DataType.INDEFINITE_STRING:
             raise ValueError(f"Expected {dtype} but got {inner.dtype}")
         super().__init__(dtype=dtype)
         self.inner = inner
+        self.separator = separator
 
     def __call__(self, record: Record) -> Decimal:
         value = self.inner(record)
@@ -158,10 +165,10 @@ class _AsNumber(ProgramElement[Decimal]):
         assert isinstance(
             value, str
         ), f"{self.__class__.__name__}: Invalid input {value!r}"
-        return Decimal(value)
+        return Decimal(value.replace(self.separator, ""))
 
     def __str__(self):
-        return f"Number({self.inner})"
+        return f"Number({self.inner}, {self.separator!r})"
 
 
 def as_number(value: ProgramElement) -> ProgramElement[Decimal]:
