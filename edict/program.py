@@ -26,6 +26,7 @@ __all__ = [
     "Conjunction",
     "DataType",
     "Disjunction",
+    "Error",
     "Fields",
     "Identifier",
     "Literal",
@@ -34,6 +35,7 @@ __all__ = [
     "ProgramElement",
     "Record",
     "Rule",
+    "RuntimeError",
     "Statements",
     "SubString",
     "UnaryMinus",
@@ -77,6 +79,14 @@ T1 = TypeVar("T1", str, bool, Decimal, None)
 T2 = TypeVar("T2", str, bool, Decimal, None)
 
 
+class Error(Exception):
+    pass
+
+
+class ERuntimeError(Error):
+    """An Edict runtime error."""
+
+
 class ProgramElement(Generic[T]):
     """Interface of a program element."""
 
@@ -84,6 +94,15 @@ class ProgramElement(Generic[T]):
         self.dtype = dtype
 
     def __call__(self, record: Record) -> T:
+        """Evaluate on the given record."""
+        try:
+            return self._call(record)
+        except ERuntimeError:
+            raise
+        except Exception as e:
+            raise ERuntimeError(f"Error in {self!s}:\n{e!s}") from e
+
+    def _call(self, record: Record) -> T:
         """Evaluate on the given record."""
         raise NotImplementedError
 
@@ -98,7 +117,7 @@ class Literal(ProgramElement[T_literal]):
         super().__init__(dtype=dtype)
         self.value: T_literal = value
 
-    def __call__(self, record: Record) -> T_literal:
+    def _call(self, record: Record) -> T_literal:
         return self.value
 
     def __str__(self):
@@ -115,7 +134,7 @@ class Identifier(ProgramElement[str]):
         super().__init__(dtype=DataType.INDEFINITE_STRING)
         self.name = name
 
-    def __call__(self, record: Record) -> str:
+    def _call(self, record: Record) -> str:
         return record.get(self.name, "")
 
     def __str__(self):
@@ -130,7 +149,7 @@ class _AsString(ProgramElement[str]):
         super().__init__(dtype=dtype)
         self.inner: ProgramElement[str] = inner
 
-    def __call__(self, record: Record) -> str:
+    def _call(self, record: Record) -> str:
         return self.inner(record)
 
     def __str__(self):
@@ -158,7 +177,7 @@ class _AsNumber(ProgramElement[Decimal]):
         self.inner = inner
         self.separator = separator
 
-    def __call__(self, record: Record) -> Decimal:
+    def _call(self, record: Record) -> Decimal:
         value = self.inner(record)
         if isinstance(value, Decimal):
             return value
@@ -201,7 +220,7 @@ class _StringEncodeNumber(ProgramElement[str]):
     def __init__(self, inner: ProgramElement[Decimal]):
         self.inner = inner
 
-    def __call__(self, record: Record) -> str:
+    def _call(self, record: Record) -> str:
         return str(self.inner(record))
 
     def __str__(self):
@@ -214,7 +233,7 @@ class _StringEncodeBoolean(ProgramElement[str]):
     def __init__(self, inner: ProgramElement[bool]):
         self.inner = inner
 
-    def __call__(self, record: Record) -> str:
+    def _call(self, record: Record) -> str:
         return "true" if self.inner(record) else "false"
 
     def __str__(self):
@@ -253,7 +272,7 @@ class _FCasefold(_FunctionCall[str]):
         super().__init__(args, dtype=DataType.STRING)
         (self.arg,) = args
 
-    def __call__(self, record: Record) -> str:
+    def _call(self, record: Record) -> str:
         return self.arg(record).casefold()
 
 
@@ -268,7 +287,7 @@ class _FReadDate(_FunctionCall[str]):
         self.date_string = as_string(date_string)
         self.date_format = as_string(date_format)
 
-    def __call__(self, record: Record) -> str:
+    def _call(self, record: Record) -> str:
         import datetime
 
         return (
@@ -290,7 +309,7 @@ class _FNum(_FunctionCall[Decimal]):
         (value,) = args
         self.value = as_number(value)
 
-    def __call__(self, record: Record) -> Decimal:
+    def _call(self, record: Record) -> Decimal:
         return self.value(record)
 
 
@@ -308,7 +327,7 @@ class UnaryMinus(ProgramElement[Decimal]):
         super().__init__(dtype=DataType.NUMBER)
         self.inner = as_number(inner)
 
-    def __call__(self, record: Record) -> Decimal:
+    def _call(self, record: Record) -> Decimal:
         return -self.inner(record)
 
     def __str__(self):
@@ -334,7 +353,7 @@ class BinaryOperator(ProgramElement[T], Generic[T, T1, T2]):
         self.right: ProgramElement[T2] = as_type(right, dtype_right)
         self.op: Callable[[T1, T2], T] = op
 
-    def __call__(self, record: Record) -> T:
+    def _call(self, record: Record) -> T:
         left_value = self.left(record)
         right_value = self.right(record)
         return self.op(left_value, right_value)
@@ -387,7 +406,7 @@ class Match(ProgramElement[bool]):
             self.compiled_pattern = re.compile(pattern.value, flags)
         self.string = as_string(string)
 
-    def __call__(self, record: Record) -> bool:
+    def _call(self, record: Record) -> bool:
         string = self.string(record)
         return bool(self.compiled_pattern.search(string))
 
@@ -409,7 +428,7 @@ class SubString(ProgramElement[bool]):
             self.substring = self.substring.casefold()
             self.string = _FCasefold((self.string,))
 
-    def __call__(self, record: Record) -> bool:
+    def _call(self, record: Record) -> bool:
         string = self.string(record)
         return self.substring in string
 
@@ -422,7 +441,7 @@ class UnaryNot(ProgramElement[bool]):
         super().__init__(dtype=DataType.BOOLEAN)
         self.inner = as_boolean(inner)
 
-    def __call__(self, record: Record) -> bool:
+    def _call(self, record: Record) -> bool:
         return not self.inner(record)
 
     def __str__(self):
@@ -434,7 +453,7 @@ class Conjunction(ProgramElement[bool]):
         super().__init__(dtype=DataType.BOOLEAN)
         self.parts = [as_boolean(part) for part in parts]
 
-    def __call__(self, record: Record) -> bool:
+    def _call(self, record: Record) -> bool:
         # Short-circuiting evaluation
         return all(part(record) for part in self.parts)
 
@@ -447,7 +466,7 @@ class Disjunction(ProgramElement[bool]):
         super().__init__(dtype=DataType.BOOLEAN)
         self.parts = [as_boolean(part) for part in parts]
 
-    def __call__(self, record: Record) -> bool:
+    def _call(self, record: Record) -> bool:
         # Short-circuiting evaluation
         return any(part(record) for part in self.parts)
 
@@ -477,7 +496,7 @@ class Statements(_Executable):
         super().__init__()
         self.statements = statements
 
-    def __call__(self, record: Record) -> None:
+    def _call(self, record: Record) -> None:
         for statement in self.statements:
             statement(record)
 
@@ -500,7 +519,7 @@ class Assignment(_Executable):
         self.name = name
         self.value = string_encode(value)
 
-    def __call__(self, record: Record) -> None:
+    def _call(self, record: Record) -> None:
         record[self.name] = self.value(record)
 
     def _update_fields(self, fields: OrderedSet[str]) -> None:
@@ -526,7 +545,7 @@ class Rule(_Executable):
             raise ValueError("Must specify at least one condition in a rule.")
         self.else_ = else_
 
-    def __call__(self, record: Record) -> None:
+    def _call(self, record: Record) -> None:
         for condition, statement in self.ifthens:
             if condition(record):
                 statement(record)
@@ -559,7 +578,7 @@ class Fields(_Executable):
         super().__init__()
         self._fields = OrderedSet(fields)
 
-    def __call__(self, record: Record) -> None:
+    def _call(self, record: Record) -> None:
         new_record = {}
         for field in self._fields:
             try:
@@ -579,7 +598,7 @@ class Program(_Executable):
         super().__init__()
         self.statements = statements
 
-    def __call__(self, record: Record) -> None:
+    def _call(self, record: Record) -> None:
         self.statements(record)
 
     def transform(self, record: Record) -> Record:
