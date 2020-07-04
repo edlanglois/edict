@@ -123,10 +123,8 @@ def _decimal_mod(a: Decimal, b: Decimal) -> Decimal:
     return (a % b).copy_sign(b)
 
 
-def _directive_case_insensitive(context, value):
-    if value.dtype != program.DataType.BOOLEAN:
-        raise ValueError(f"Expected BOOLEAN but got {value.dtype}")
-    context["case_insensitive"] = value.value
+def _directive_case_insensitive(context):
+    context["case_insensitive"] = True
 
 
 def _directive_default_field(context, identifier):

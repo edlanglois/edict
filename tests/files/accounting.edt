@@ -2,7 +2,7 @@
 # description
 # date
 # amount
-@case_insensitive(true)
+@case_insensitive
 @default_field("description")
 @output_fields("date","description","account1","account2","amount1","comment")
 

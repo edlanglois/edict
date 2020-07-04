@@ -1,4 +1,4 @@
-@case_insensitive(true)
+@case_insensitive
 @default_field("x")
 
 a = 0
