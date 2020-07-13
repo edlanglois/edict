@@ -1,0 +1,4 @@
+# Note: Assigning the result of record_str() to a field is not recommended
+# This is for testing purposes only.
+# The intended use is with logging: log(record_str())
+z = record_str()

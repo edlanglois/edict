@@ -11,7 +11,7 @@ Functions create an implicit ProgramElement if necessary.
 
 import sys
 from decimal import Decimal
-from typing import Callable, Dict, Sequence
+from typing import Callable, Dict, Sequence, Type
 
 from .program_base import DataType, EPrepareError, ProgramElement, T, string_encode
 from .types import Record
@@ -183,9 +183,36 @@ class ReadDate(FunctionCall[str]):
         )
 
 
+class RecordStr(FunctionCall[str]):
+    """Format the current record as a string.
+
+    This is meant to be a pretty-printer, not an unambiguous serialization.
+    """
+
+    name = "record_str"
+
+    def __init__(self, field_separator: str = "\n"):
+        super().__init__(dtype=DataType.STRING)
+        self.field_separator = field_separator
+
+    def _call(self, record: Record) -> str:
+        return self.field_separator.join(
+            f"{key}: {value}" for key, value in record.items()
+        )
+
+    def __str__(self):
+        return f"{self.name}()"
+
+
 # Public API functions
+_PUBLIC_FUNCTIONS: Sequence[Type[FunctionCall]] = (
+    AsNumber,
+    Log,
+    ReadDate,
+    RecordStr,
+)
 FUNCTION_TABLE: Dict[str, Callable[..., FunctionCall]] = {
-    f.name: f for f in (AsNumber, Log, ReadDate)  # type: ignore
+    f.name: f for f in _PUBLIC_FUNCTIONS
 }
 
 
