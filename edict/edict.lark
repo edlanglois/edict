@@ -11,7 +11,7 @@ inline_directive: "@@" _directive
 _directive: CNAME ( "(" ( literal "," )* literal? ")" )?
 
 statements: _statement*
-_statement: rule | assignment | inline_directive
+_statement: rule | assignment | bare_expression | inline_directive
 
 rule: "if" rule_ifthen ( "elif" rule_ifthen )* rule_else? "fi"
 rule_ifthen: _expression "then" statements
@@ -56,9 +56,11 @@ or_expr: "|"? and_expr ( "|" and_expr )*
 
 _expression: or_expr
 
+// Expression as a statement
+bare_expression: _expression
+
 assignment: identifier "=" _expression
 _assignments: assignment*
-
 
 // Tokens
 // ======

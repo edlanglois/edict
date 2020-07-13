@@ -9,10 +9,11 @@ Classes are ProgramElement objects.
 Functions create an implicit ProgramElement if necessary.
 """
 
+import sys
 from decimal import Decimal
 from typing import Callable, Dict, Sequence
 
-from .program_base import DataType, EPrepareError, ProgramElement, T
+from .program_base import DataType, EPrepareError, ProgramElement, T, string_encode
 from .types import Record
 
 __all__ = [
@@ -145,6 +146,19 @@ def casefold(inner: ProgramElement[str]) -> ProgramElement[str]:
     return CaseFold(inner, implicit=True)
 
 
+class Log(FunctionCall[None]):
+    """Log all arguments to standard error."""
+
+    name = "log"
+
+    def __init__(self, *args: ProgramElement):
+        self.args = [string_encode(arg) for arg in args]
+
+    def _call(self, record: Record) -> None:
+        values = [arg(record) for arg in self.args]
+        print(*values, file=sys.stderr)
+
+
 class ReadDate(FunctionCall[str]):
     """Read a date and format as an ISO 8601 string."""
 
@@ -171,7 +185,7 @@ class ReadDate(FunctionCall[str]):
 
 # Public API functions
 FUNCTION_TABLE: Dict[str, Callable[..., FunctionCall]] = {
-    f.name: f for f in (AsNumber, ReadDate)  # type: ignore
+    f.name: f for f in (AsNumber, Log, ReadDate)  # type: ignore
 }
 
 

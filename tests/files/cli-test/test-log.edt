@@ -1,0 +1,5 @@
+log("test", 1, false)
+log(x)
+if {log y} == 1 then
+	log(y)
+fi
