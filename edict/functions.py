@@ -3,7 +3,7 @@
 from decimal import Decimal
 from typing import Callable, Dict, Sequence
 
-from .program_base import DataType, ProgramElement, T, as_number, as_string
+from .program_base import DataType, Error, ProgramElement, T, as_number, as_string
 from .types import Record
 
 __all__ = [
@@ -83,4 +83,8 @@ FUNCTION_TABLE: Dict[str, Callable[[Sequence[ProgramElement]], FunctionCall]] = 
 
 
 def function_call(name: str, args: Sequence[ProgramElement]):
-    return FUNCTION_TABLE[name](args)
+    try:
+        f = FUNCTION_TABLE[name]
+    except KeyError:
+        raise Error(f"No function named {name!r}")
+    return f(args)
