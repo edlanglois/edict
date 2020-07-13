@@ -2,36 +2,36 @@
 
 if "==" then
 	{comp x y} = (x == y)
-	{comp x num(y)} = (x == num(y))
+	{comp x as_number(y)} = (x == as_number(y))
 	{comp 1 y} = 1 == y
 fi
 
 if "!=" then
 	{comp x y} = (x != y)
-	{comp x num(y)} = (x != num(y))
+	{comp x as_number(y)} = (x != as_number(y))
 	{comp 1 y} = 1 != y
 fi
 
 if "<" then
 	{comp x y} = (x < y)
-	{comp x num(y)} = (x < num(y))
+	{comp x as_number(y)} = (x < as_number(y))
 	{comp 1 y} = 1 < y
 fi
 
 if "<=" then
 	{comp x y} = (x <= y)
-	{comp x num(y)} = (x <= num(y))
+	{comp x as_number(y)} = (x <= as_number(y))
 	{comp 1 y} = 1 <= y
 fi
 
 if ">" then
 	{comp x y} = (x > y)
-	{comp x num(y)} = (x > num(y))
+	{comp x as_number(y)} = (x > as_number(y))
 	{comp 1 y} = 1 > y
 fi
 
 if ">=" then
 	{comp x y} = (x >= y)
-	{comp x num(y)} = (x >= num(y))
+	{comp x as_number(y)} = (x >= as_number(y))
 	{comp 1 y} = 1 >= y
 fi

@@ -1,2 +1,2 @@
-{z num} = x == num(y)
+{z num} = x == as_number(y)
 {z str} = x == y

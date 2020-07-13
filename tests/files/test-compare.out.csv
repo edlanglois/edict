@@ -1,4 +1,4 @@
-op,x,y,comp x y,comp x num(y),comp 1 y
+op,x,y,comp x y,comp x as_number(y),comp 1 y
 ==,1,1,true,true,true
 ==,1,2,false,false,false
 ==,1,1.0,false,true,true

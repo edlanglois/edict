@@ -6,7 +6,13 @@ from typing import Callable, Dict, Sequence
 from .program_base import DataType, ProgramElement, T, as_number, as_string
 from .types import Record
 
-__all__ = ["CaseFold", "FunctionCall", "Num", "ReadDate", "function_call"]
+__all__ = [
+    "AsNumber",
+    "CaseFold",
+    "FunctionCall",
+    "ReadDate",
+    "function_call",
+]
 
 
 class FunctionCall(ProgramElement[T]):
@@ -57,10 +63,10 @@ class ReadDate(FunctionCall[str]):
         )
 
 
-class Num(FunctionCall[Decimal]):
+class AsNumber(FunctionCall[Decimal]):
     """Interpret a value as a number."""
 
-    name = "num"
+    name = "as_number"
 
     def __init__(self, args: Sequence[ProgramElement]):
         super().__init__(args, dtype=DataType.NUMBER)
@@ -72,7 +78,7 @@ class Num(FunctionCall[Decimal]):
 
 
 FUNCTION_TABLE: Dict[str, Callable[[Sequence[ProgramElement]], FunctionCall]] = {
-    f.name: f for f in (CaseFold, Num, ReadDate)  # type: ignore
+    f.name: f for f in (AsNumber, CaseFold, ReadDate)  # type: ignore
 }
 
 
