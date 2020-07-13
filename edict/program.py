@@ -15,16 +15,15 @@ from typing import (
     TypeVar,
 )
 
-from .functions import CaseFold, function_call
-from .program_base import (
-    DataType,
-    ProgramElement,
-    T,
+from .functions import (
     as_boolean,
     as_number,
     as_string,
     as_type,
+    casefold,
+    function_call,
 )
+from .program_base import DataType, ProgramElement, T
 from .types import Record
 from .utils import OrderedSet
 
@@ -186,8 +185,8 @@ class ValueComparisonOperator(BinaryOperator[bool, Any, Any]):
         if dtype_in not in (DataType.STRING, DataType.NUMBER):
             raise ValueError("Comparison only defined for strings and numbers")
         if case_insensitive and dtype_in == DataType.STRING:
-            left = CaseFold((left,))
-            right = CaseFold((right,))
+            left = casefold(left)
+            right = casefold(right)
         super().__init__(
             left=left,
             right=right,
@@ -231,7 +230,7 @@ class SubString(ProgramElement[bool]):
         self.string = as_string(string)
         if case_insensitive:
             self.substring = self.substring.casefold()
-            self.string = CaseFold((self.string,))
+            self.string = casefold(self.string)
 
     def _call(self, record: Record) -> bool:
         string = self.string(record)
