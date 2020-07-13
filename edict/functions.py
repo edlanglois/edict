@@ -1,5 +1,10 @@
 """Edict built-in functions
 
+Given that not all of these are currently exposed as public API functions, the
+distinction between FunctionCall and other program elements is a bit fuzzy. The working
+definition of a FunctionCall is something that could be exposed as a public API
+function.
+
 Classes are ProgramElement objects.
 Functions create an implicit ProgramElement if necessary.
 """
