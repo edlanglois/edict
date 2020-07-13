@@ -6,13 +6,7 @@ from typing import Generic, TypeVar
 
 from .types import Record
 
-__all__ = [
-    "DataType",
-    "Error",
-    "ERuntimeError",
-    "ProgramElement",
-    "T",
-]
+__all__ = ["DataType", "ERuntimeError", "Error", "ProgramElement", "T", "string_encode"]
 
 
 class DataType(Enum):
@@ -73,3 +67,40 @@ class ProgramElement(Generic[T]):
     def _call(self, record: Record) -> T:
         """Evaluate on the given record."""
         raise NotImplementedError
+
+
+class _StringEncodeNumber(ProgramElement[str]):
+    """Encode a number as a string."""
+
+    def __init__(self, inner: ProgramElement[Decimal]):
+        self.inner = inner
+
+    def _call(self, record: Record) -> str:
+        return str(self.inner(record))
+
+    def __str__(self):
+        return f"{self.__class__.__name__}({self.inner})"
+
+
+class _StringEncodeBoolean(ProgramElement[str]):
+    """Encode a Boolean as a string."""
+
+    def __init__(self, inner: ProgramElement[bool]):
+        self.inner = inner
+
+    def _call(self, record: Record) -> str:
+        return "true" if self.inner(record) else "false"
+
+    def __str__(self):
+        return f"{self.__class__.__name__}({self.inner})"
+
+
+def string_encode(value: ProgramElement) -> ProgramElement[str]:
+    """Encode the given value as a string."""
+    if value.dtype in (DataType.STRING, DataType.INDEFINITE_STRING):
+        return value
+    if value.dtype == DataType.NUMBER:
+        return _StringEncodeNumber(value)
+    if value.dtype == DataType.BOOLEAN:
+        return _StringEncodeBoolean(value)
+    raise ValueError(f"No string encoding for value of type {value.dtype}")

@@ -9,10 +9,11 @@ Classes are ProgramElement objects.
 Functions create an implicit ProgramElement if necessary.
 """
 
+import sys
 from decimal import Decimal
-from typing import Callable, Dict, Sequence
+from typing import Callable, Dict, Sequence, Type
 
-from .program_base import DataType, EPrepareError, ProgramElement, T
+from .program_base import DataType, EPrepareError, ProgramElement, T, string_encode
 from .types import Record
 
 __all__ = [
@@ -145,6 +146,19 @@ def casefold(inner: ProgramElement[str]) -> ProgramElement[str]:
     return CaseFold(inner, implicit=True)
 
 
+class Log(FunctionCall[None]):
+    """Log all arguments to standard error."""
+
+    name = "log"
+
+    def __init__(self, *args: ProgramElement):
+        self.args = [string_encode(arg) for arg in args]
+
+    def _call(self, record: Record) -> None:
+        values = [arg(record) for arg in self.args]
+        print(*values, file=sys.stderr)
+
+
 class ReadDate(FunctionCall[str]):
     """Read a date and format as an ISO 8601 string."""
 
@@ -169,9 +183,36 @@ class ReadDate(FunctionCall[str]):
         )
 
 
+class RecordStr(FunctionCall[str]):
+    """Format the current record as a string.
+
+    This is meant to be a pretty-printer, not an unambiguous serialization.
+    """
+
+    name = "record_str"
+
+    def __init__(self, field_separator: str = "\n"):
+        super().__init__(dtype=DataType.STRING)
+        self.field_separator = field_separator
+
+    def _call(self, record: Record) -> str:
+        return self.field_separator.join(
+            f"{key}: {value}" for key, value in record.items()
+        )
+
+    def __str__(self):
+        return f"{self.name}()"
+
+
 # Public API functions
+_PUBLIC_FUNCTIONS: Sequence[Type[FunctionCall]] = (
+    AsNumber,
+    Log,
+    ReadDate,
+    RecordStr,
+)
 FUNCTION_TABLE: Dict[str, Callable[..., FunctionCall]] = {
-    f.name: f for f in (AsNumber, ReadDate)  # type: ignore
+    f.name: f for f in _PUBLIC_FUNCTIONS
 }
 
 

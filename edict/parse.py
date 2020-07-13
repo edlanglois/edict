@@ -340,6 +340,10 @@ class _TransformToProgram(lark.Transformer):
         identifier, value = args
         return program.Assignment(name=identifier.name, value=value)
 
+    def bare_expression(self, args):
+        (inner,) = args
+        return program.BareExpression(inner)
+
     def rule(self, args):
         ifthens = args
         if ifthens[-1][0] is None:

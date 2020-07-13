@@ -60,3 +60,17 @@ def test_edict_csv_chained():
     with open(target_csv_out, "r") as fout_target:
         target = fout_target.read()
     assert result.stdout.decode() == target
+
+
+def test_edict_log():
+    csv_in = FILES_DIR / "cli-test" / "test-log.in.csv"
+    edict_file = FILES_DIR / "cli-test" / "test-log.edt"
+    target_log_file = FILES_DIR / "cli-test" / "test-log.log"
+    result = subprocess.run(
+        ["edict", "-i", csv_in, "-r", "csv", "-w", "csv", edict_file],
+        capture_output=True,
+    )
+    assert result.returncode == 0
+    with open(target_log_file, "r") as f:
+        target_log = f.read()
+    assert result.stderr.decode() == target_log

@@ -23,7 +23,7 @@ from .functions import (
     casefold,
     function_call,
 )
-from .program_base import DataType, ProgramElement, T
+from .program_base import DataType, ProgramElement, T, string_encode
 from .types import Record
 from .utils import OrderedSet
 
@@ -34,6 +34,7 @@ __all__ = [
     "DataType",
     "Disjunction",
     "Fields",
+    "function_call",
     "Identifier",
     "Literal",
     "Match",
@@ -46,8 +47,6 @@ __all__ = [
     "UnaryMinus",
     "UnaryNot",
     "ValueComparisonOperator",
-    "function_call",
-    "string_encode",
 ]
 
 
@@ -83,43 +82,6 @@ class Identifier(ProgramElement[str]):
 
     def __str__(self):
         return f"{{{self.name}}}"
-
-
-class _StringEncodeNumber(ProgramElement[str]):
-    """Encode a number as a string."""
-
-    def __init__(self, inner: ProgramElement[Decimal]):
-        self.inner = inner
-
-    def _call(self, record: Record) -> str:
-        return str(self.inner(record))
-
-    def __str__(self):
-        return f"{self.__class__.__name__}({self.inner})"
-
-
-class _StringEncodeBoolean(ProgramElement[str]):
-    """Encode a Boolean as a string."""
-
-    def __init__(self, inner: ProgramElement[bool]):
-        self.inner = inner
-
-    def _call(self, record: Record) -> str:
-        return "true" if self.inner(record) else "false"
-
-    def __str__(self):
-        return f"{self.__class__.__name__}({self.inner})"
-
-
-def string_encode(value: ProgramElement) -> ProgramElement[str]:
-    """Encode the given value as a string."""
-    if value.dtype in (DataType.STRING, DataType.INDEFINITE_STRING):
-        return value
-    if value.dtype == DataType.NUMBER:
-        return _StringEncodeNumber(value)
-    if value.dtype == DataType.BOOLEAN:
-        return _StringEncodeBoolean(value)
-    raise ValueError(f"No string encoding for value of type {value.dtype}")
 
 
 class UnaryMinus(ProgramElement[Decimal]):
@@ -331,6 +293,24 @@ class Assignment(_Executable):
 
     def __str__(self):
         return f"{{{self.name}}} = {self.value}"
+
+
+class BareExpression(_Executable):
+    """An expression used as a statement."""
+
+    def __init__(self, inner: ProgramElement):
+        super().__init__()
+        self.inner = inner
+
+    def _call(self, record: Record) -> None:
+        self.inner(record)
+        return None
+
+    def _update_fields(self, fields: OrderedSet[str]) -> None:
+        pass
+
+    def __str__(self):
+        return str(self.inner)
 
 
 class Rule(_Executable):
