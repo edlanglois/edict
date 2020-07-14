@@ -120,7 +120,11 @@ def write_hleger_journal(f: TextIO, data: RecordStream) -> None:
             amount = record.get(f"amount{n}", "")
             if amount:
                 if currency:
-                    amount = f"{currency}{amount}"
+                    # If the length of the currency field is > 1 then it's probably a
+                    # commodity rather than a currency symbol so separate from the
+                    # amount with a space.
+                    currency_sep = " " if len(currency) > 1 else ""
+                    amount = f"{currency}{currency_sep}{amount}"
 
                 if unitprice := record.get(f"unitprice{n}"):
                     amount = f"{amount} @ {unitprice}"
