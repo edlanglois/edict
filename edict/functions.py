@@ -11,9 +11,16 @@ Functions create an implicit ProgramElement if necessary.
 
 import sys
 from decimal import Decimal
-from typing import Callable, Dict, Sequence, Type
+from typing import Callable, Dict, Optional, Sequence, Type
 
-from .program_base import DataType, EPrepareError, ProgramElement, T, string_encode
+from .program_base import (
+    DataType,
+    EPrepareError,
+    ERuntimeError,
+    ProgramElement,
+    T,
+    string_encode,
+)
 from .types import Record
 
 __all__ = [
@@ -23,6 +30,7 @@ __all__ = [
     "FUNCTION_TABLE",
     "FunctionCall",
     "ReadDate",
+    "SubString",
     "as_boolean",
     "as_number",
     "as_string",
@@ -204,12 +212,59 @@ class RecordStr(FunctionCall[str]):
         return f"{self.name}()"
 
 
+def _decimal_as_int(x: Decimal) -> int:
+    """Interpret a decimal value as an integer if possible.
+
+    Raises:
+        ERuntimeError if `x` is not an integer.
+    """
+    numerator, denominator = x.as_integer_ratio()
+    if denominator != 1:
+        raise ERuntimeError(f"{x} is not an integer")
+    assert numerator == x
+    return numerator
+
+
+class SubString(FunctionCall[str]):
+    """Extract a substring.
+
+    Args:
+        inner: Take a substring of this string.
+        start: Index of the start of the substring. The first character has index 0.
+            Negative numbers count from the end. The last character has index -1.
+        end: Index of one past the end of the substring.
+    """
+
+    name = "substring"
+
+    def __init__(
+        self,
+        inner: ProgramElement[str],
+        start: ProgramElement[Decimal],
+        end: Optional[ProgramElement[Decimal]] = None,
+    ):
+        super().__init__(dtype=DataType.STRING)
+        self.inner = inner
+        self.start = start
+        self.end = end
+
+    def _call(self, record: Record) -> str:
+        inner_value = self.inner(record)
+        start_value = _decimal_as_int(self.start(record))
+        if self.end is not None:
+            end_value: Optional[int] = _decimal_as_int(self.end(record))
+        else:
+            end_value = None
+        return inner_value[start_value:end_value]
+
+
 # Public API functions
 _PUBLIC_FUNCTIONS: Sequence[Type[FunctionCall]] = (
     AsNumber,
     Log,
     ReadDate,
     RecordStr,
+    SubString,
 )
 FUNCTION_TABLE: Dict[str, Callable[..., FunctionCall]] = {
     f.name: f for f in _PUBLIC_FUNCTIONS
