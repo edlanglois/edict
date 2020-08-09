@@ -29,7 +29,7 @@
 
 2020-01-07 (009932) Buy
     assets:brokerage:cash
-    assets:brokerage:stocks  HTZ9 @@ $139.32
+    assets:brokerage:stocks  HTZ 9 @@ $139.32
     expenses:fees  $10  ; Exchange fees
 
 2020-01-08 Check Balance
@@ -49,6 +49,6 @@
 
 2020-06-01 (009932) Sell
     assets:brokerage:cash  $8.01  ; This is actual sale proceeds
-    assets:brokerage:stocks  HTZ-9 @ $15.48  ; Record original purchase price here
+    assets:brokerage:stocks  HTZ -9 @ $15.48  ; Record original purchase price here
     income:capital-gains
 
