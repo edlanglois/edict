@@ -1,0 +1,3 @@
+prefix = substring(word, 0, 3)
+suffix = substring(word, -2)
+middle = substring(word, 3, 8)
