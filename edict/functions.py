@@ -13,14 +13,7 @@ import sys
 from decimal import Decimal
 from typing import Callable, Dict, Optional, Sequence, Type
 
-from .program_base import (
-    DataType,
-    EPrepareError,
-    ERuntimeError,
-    ProgramElement,
-    T,
-    string_encode,
-)
+from .program_base import DataType, EPrepareError, ProgramElement, T, string_encode
 from .types import Record
 
 __all__ = [
@@ -229,11 +222,11 @@ def _decimal_as_int(x: Decimal) -> int:
     """Interpret a decimal value as an integer if possible.
 
     Raises:
-        ERuntimeError if `x` is not an integer.
+        ValueError if `x` is not an integer.
     """
     numerator, denominator = x.as_integer_ratio()
     if denominator != 1:
-        raise ERuntimeError(f"{x} is not an integer")
+        raise ValueError(f"{x} is not an integer")
     assert numerator == x
     return numerator
 
