@@ -7,7 +7,7 @@ import pathlib
 import sys
 from typing import Generator, Optional, TextIO
 
-from edict import load
+from edict import __version__, load
 from edict.protocols import READERS, WRITERS
 
 
@@ -52,6 +52,7 @@ def parse_args(argv=None):
         help="Output format to write (default: csv)",
     )
     parser.add_argument("edict_file", type=pathlib.Path, nargs="*", help="Edict file")
+    parser.add_argument("-v", "--version", action="version", version=__version__)
 
     return parser.parse_args(argv)
 
