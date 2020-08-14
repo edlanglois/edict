@@ -244,9 +244,9 @@ class SubString(FunctionCall[str]):
         end: Optional[ProgramElement[Decimal]] = None,
     ):
         super().__init__(dtype=DataType.STRING)
-        self.inner = inner
-        self.start = start
-        self.end = end
+        self.inner = as_string(inner)
+        self.start = as_number(start)
+        self.end = as_number(end) if end is not None else None
 
     def _call(self, record: Record) -> str:
         inner_value = self.inner(record)
