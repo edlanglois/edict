@@ -13,14 +13,7 @@ import sys
 from decimal import Decimal
 from typing import Callable, Dict, Optional, Sequence, Type
 
-from .program_base import (
-    DataType,
-    EPrepareError,
-    ERuntimeError,
-    ProgramElement,
-    T,
-    string_encode,
-)
+from .program_base import DataType, EPrepareError, ProgramElement, T, string_encode
 from .types import Record
 
 __all__ = [
@@ -154,6 +147,19 @@ def casefold(inner: ProgramElement[str]) -> ProgramElement[str]:
     return CaseFold(inner, implicit=True)
 
 
+class Concatenate(FunctionCall[str]):
+    """Concatenate strings."""
+
+    name = "concatenate"
+
+    def __init__(self, *parts: ProgramElement[str]):
+        super().__init__(dtype=DataType.STRING)
+        self.parts = [as_string(part) for part in parts]
+
+    def _call(self, record: Record) -> str:
+        return "".join(part(record) for part in self.parts)
+
+
 class Log(FunctionCall[None]):
     """Log all arguments to standard error."""
 
@@ -216,11 +222,11 @@ def _decimal_as_int(x: Decimal) -> int:
     """Interpret a decimal value as an integer if possible.
 
     Raises:
-        ERuntimeError if `x` is not an integer.
+        ValueError if `x` is not an integer.
     """
     numerator, denominator = x.as_integer_ratio()
     if denominator != 1:
-        raise ERuntimeError(f"{x} is not an integer")
+        raise ValueError(f"{x} is not an integer")
     assert numerator == x
     return numerator
 
@@ -244,9 +250,9 @@ class SubString(FunctionCall[str]):
         end: Optional[ProgramElement[Decimal]] = None,
     ):
         super().__init__(dtype=DataType.STRING)
-        self.inner = inner
-        self.start = start
-        self.end = end
+        self.inner = as_string(inner)
+        self.start = as_number(start)
+        self.end = as_number(end) if end is not None else None
 
     def _call(self, record: Record) -> str:
         inner_value = self.inner(record)
@@ -261,6 +267,7 @@ class SubString(FunctionCall[str]):
 # Public API functions
 _PUBLIC_FUNCTIONS: Sequence[Type[FunctionCall]] = (
     AsNumber,
+    Concatenate,
     Log,
     ReadDate,
     RecordStr,

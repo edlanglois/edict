@@ -2,7 +2,7 @@
 
 from decimal import Decimal
 from enum import Enum
-from typing import Generic, TypeVar
+from typing import Generic, Optional, TypeVar
 
 from .types import Record
 
@@ -48,6 +48,23 @@ class EPrepareError(Error):
 class ERuntimeError(Error):
     """An Edict runtime error."""
 
+    def __init__(self, *args, record: Optional[Record] = None):
+        self.record = record
+
+    def __str__(self) -> str:
+        error_str = super().__str__()
+        if self.record is not None:
+            error_str = "\n".join(
+                [
+                    error_str,
+                    "Error occurred while processing record:",
+                    "\n".join(
+                        f"\t{key}: {value}" for key, value in self.record.items()
+                    ),
+                ]
+            )
+        return error_str
+
 
 class ProgramElement(Generic[T]):
     """Interface of a program element."""
@@ -62,7 +79,7 @@ class ProgramElement(Generic[T]):
         except ERuntimeError:
             raise
         except Exception as e:
-            raise ERuntimeError(f"Error in {self!s}:\n{e!s}") from e
+            raise ERuntimeError(f"Error in {self!s}:\n{e!s}", record=record) from e
 
     def _call(self, record: Record) -> T:
         """Evaluate on the given record."""
