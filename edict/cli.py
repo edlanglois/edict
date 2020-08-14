@@ -52,7 +52,7 @@ def parse_args(argv=None):
         help="Output format to write (default: csv)",
     )
     parser.add_argument("edict_file", type=pathlib.Path, nargs="*", help="Edict file")
-    parser.add_argument("-v", "--version", action="version", version=__version__)
+    parser.add_argument("-V", "--version", action="version", version=__version__)
 
     return parser.parse_args(argv)
 
