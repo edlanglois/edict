@@ -57,7 +57,7 @@ or_expr: "|"? and_expr ( "|" and_expr )*
 _expression: or_expr
 
 // Expression as a statement
-bare_expression: _expression
+bare_expression: call
 
 assignment: identifier "=" _expression
 _assignments: assignment*
