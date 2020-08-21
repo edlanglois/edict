@@ -64,13 +64,13 @@ def _check_interpret_type(value: ProgramElement, dtype: DataType) -> None:
     """
     if value.dtype == dtype or value.dtype == DataType.INDEFINITE_STRING:
         return
-    raise EPrepareError("Cannot interpret {value.dtype} as {dtype}")
+    raise EPrepareError(f"Cannot interpret {value.dtype} as {dtype}")
 
 
 def as_boolean(inner: ProgramElement) -> ProgramElement[bool]:
     if inner.dtype == DataType.BOOLEAN:
         return inner
-    raise EPrepareError("Cannot interpret {value.dtype} as {dtype}")
+    raise EPrepareError(f"Cannot interpret {inner.dtype} as BOOLEAN")
 
 
 class AsNumber(_ImplicitFunctionCall[Decimal]):
