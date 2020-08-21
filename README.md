@@ -1,6 +1,8 @@
 # edict: Eric's Dictionary Transformer
 A simple language for specifying transformations to dictionaries.
 
+This is in alpha stage. Changes may be backwards incompatible without warning.
+
 ## Install
 ```sh
 pip install .
