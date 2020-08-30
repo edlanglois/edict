@@ -4,7 +4,7 @@ from __future__ import annotations
 import re
 from typing import Callable, Dict, Iterable, List, TextIO
 
-from edict.types import RecordStream
+from edict.types import Record, RecordStream
 
 __all__ = [
     "READERS",
@@ -12,6 +12,16 @@ __all__ = [
     "read_csv",
     "write_csv",
 ]
+
+
+def _validated_records(records: Iterable[Record]) -> Iterable[Record]:
+    for record in records:
+        if None in record:
+            values = record[None]  # type: ignore
+            raise ValueError(
+                f"Encountered value(s) {values} not in a named CSV column."
+            )
+        yield record
 
 
 def read_csv(f: TextIO) -> RecordStream:
@@ -22,7 +32,7 @@ def read_csv(f: TextIO) -> RecordStream:
     if fields is None:
         raise ValueError("First line must contain field names.")
 
-    return RecordStream(fields=list(fields), records=reader)
+    return RecordStream(fields=list(fields), records=_validated_records(reader))
 
 
 def write_csv(f: TextIO, data: RecordStream) -> None:
