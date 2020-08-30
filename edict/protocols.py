@@ -81,20 +81,15 @@ def write_hleger_journal(f: TextIO, data: RecordStream) -> None:
 
     for record in data.records:
         date = record["date"]  # required
-        date2 = record.get("date2", "")
-        if date2:
+        if date2 := record.get("date2", ""):
             date2 = f"={date2}"
-        status = record.get("status", "")
-        if status:
+        if status := record.get("status", ""):
             status = f" {status}"
-        code = record.get("code", "")
-        if code:
+        if code := record.get("code", ""):
             code = f" ({code})"
-        description = record.get("description", "")
-        if description:
+        if description := record.get("description", ""):
             description = f" {description}"
-        comment = record.get("comment", "")
-        if comment:
+        if comment := record.get("comment", ""):
             comment = f"  ; {comment}"
         f.write(f"{date}{date2}{status}{code}{description}{comment}\n")
 
@@ -108,12 +103,10 @@ def write_hleger_journal(f: TextIO, data: RecordStream) -> None:
             if not account:
                 continue
 
-            status = record.get(f"status{n}", "")
-            if status:
+            if status := record.get(f"status{n}", ""):
                 status = f" {status}"
 
-            comment = record.get(f"comment{n}", "")
-            if comment:
+            if comment := record.get(f"comment{n}", ""):
                 comment = f"  ; {comment}"
 
             if record.get(f"virtual{n}"):
@@ -147,8 +140,7 @@ def write_hleger_journal(f: TextIO, data: RecordStream) -> None:
             if balance:
                 balance = f" = {balance}"
 
-            suffix = f"{amount}{balance}{comment}"
-            if suffix:
+            if suffix := f"{amount}{balance}{comment}":
                 suffix = f"  {suffix}"
 
             f.write(f"    {status}{account}{suffix}\n")
