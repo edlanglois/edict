@@ -1,8 +1,10 @@
 """Stream editors."""
-from edict.types import RecordStream
+from .program_base import ProgramElement
+from .types import RecordStream
 
 __all__ = [
     "Reverse",
+    "Sort",
     "STREAM_EDITORS",
     "StreamEditor",
 ]
@@ -21,8 +23,21 @@ class Reverse(StreamEditor):
     def __init__(self):
         super().__init__()
 
-    def __call__(self, data):
+    def __call__(self, data: RecordStream) -> RecordStream:
         return RecordStream(fields=data.fields, records=reversed(list(data.records)))
 
 
-STREAM_EDITORS = {e.name: e for e in [Reverse]}
+class Sort(StreamEditor):
+    name = "sort"
+
+    def __init__(self, key: ProgramElement):
+        super().__init__()
+        self.key = key
+
+    def __call__(self, data: RecordStream) -> RecordStream:
+        return RecordStream(
+            fields=data.fields, records=sorted(data.records, key=self.key)
+        )
+
+
+STREAM_EDITORS = {e.name: e for e in [Reverse, Sort]}

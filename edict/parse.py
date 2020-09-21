@@ -142,7 +142,7 @@ def _directive_output_fields(context, *fields):
     context["output_fields"] = field_names
 
 
-def _directive_pre_transform(context, name, *args):
+def _directive_pre_transform(context, *args, name):
     context["pre_transform"] = stream.STREAM_EDITORS[name](*args)
 
 
@@ -151,6 +151,7 @@ HEADER_DIRECTIVES = {
     "default_field": _directive_default_field,
     "output_fields": _directive_output_fields,
     "reverse": functools.partial(_directive_pre_transform, name="reverse"),
+    "sort": functools.partial(_directive_pre_transform, name="sort"),
 }
 
 
@@ -184,7 +185,6 @@ class _TransformToProgram(lark.Transformer):
 
     def header_directive(self, args):
         name, *fargs = args
-        assert all(isinstance(farg, program.Literal) for farg in fargs)
         HEADER_DIRECTIVES[name.value](self._context, *fargs)
 
     def inline_directive(self, args):

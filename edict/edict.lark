@@ -8,7 +8,7 @@ header: header_directive*
 // Inline directives have no scope and generally expand to some code.
 header_directive: "@" _directive
 inline_directive: "@@" _directive
-_directive: CNAME ( "(" ( literal "," )* literal? ")" )?
+_directive: CNAME ( "(" ( _expression "," )* _expression? ")" )?
 
 statements: _statement*
 _statement: rule | assignment | bare_expression | inline_directive
