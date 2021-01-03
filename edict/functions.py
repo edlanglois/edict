@@ -147,19 +147,6 @@ def casefold(inner: ProgramElement[str]) -> ProgramElement[str]:
     return CaseFold(inner, implicit=True)
 
 
-class Concatenate(FunctionCall[str]):
-    """Concatenate strings."""
-
-    name = "concatenate"
-
-    def __init__(self, *parts: ProgramElement[str]):
-        super().__init__(dtype=DataType.STRING)
-        self.parts = [as_string(part) for part in parts]
-
-    def _call(self, record: Record) -> str:
-        return "".join(part(record) for part in self.parts)
-
-
 class Log(FunctionCall[None]):
     """Log all arguments to standard error."""
 
@@ -267,7 +254,6 @@ class SubString(FunctionCall[str]):
 # Public API functions
 _PUBLIC_FUNCTIONS: Sequence[Type[FunctionCall]] = (
     AsNumber,
-    Concatenate,
     Log,
     ReadDate,
     RecordStr,

@@ -1,3 +1,0 @@
-{cat a} = concatenate(a)
-ab = concatenate(a, b)
-abc = concatenate(a, b, c)
