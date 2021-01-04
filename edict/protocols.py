@@ -60,7 +60,7 @@ def _get_hledger_posting_numbers(fields: Iterable[str]) -> List[int]:
     return list(sorted(posting_numbers))
 
 
-def write_hleger_journal(f: TextIO, data: RecordStream) -> None:
+def write_hledger_journal(f: TextIO, data: RecordStream) -> None:
     """Write an hledger journal file.
 
     Format Specification:
@@ -155,5 +155,5 @@ READERS: Dict[str, _Reader] = {
 }
 WRITERS: Dict[str, _Writer] = {
     "csv": write_csv,
-    "hledger": write_hleger_journal,
+    "hledger": write_hledger_journal,
 }
