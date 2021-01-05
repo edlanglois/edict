@@ -10,6 +10,7 @@ from edict.types import RecordStream
 
 if TYPE_CHECKING:
     import os
+
     from edict.program import Program
 
 __all__ = [
@@ -29,8 +30,8 @@ class Edict:
     def apply(
         self, in_: TextIO, out: TextIO, read_protocol="csv", write_protocol="csv"
     ) -> None:
-        read = READERS[read_protocol]
-        write = WRITERS[write_protocol]
+        read = READERS[read_protocol]()
+        write = WRITERS[write_protocol]()
         write(out, self.transform(read(in_)))
         pass
 

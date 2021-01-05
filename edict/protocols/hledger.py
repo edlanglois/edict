@@ -1,55 +1,12 @@
-"""IO Protocols"""
+"HLedger IO Protocols"
 from __future__ import annotations
 
 import re
-from typing import TYPE_CHECKING, Callable, Dict, Iterable, List, TextIO
+from typing import Iterable, List, TextIO
 
-from edict.types import Record, RecordStream
+from ..types import RecordStream
 
-if TYPE_CHECKING:
-    import csv
-
-__all__ = [
-    "READERS",
-    "WRITERS",
-    "read_csv",
-    "write_csv",
-]
-
-
-def _csv_records(reader: csv.DictReader, file: TextIO) -> Iterable[Record]:
-    for record in reader:
-        if None in record:
-            values = record[None]  # type: ignore
-            raise ValueError(
-                "\n".join(
-                    [
-                        "Error reading CSV input",
-                        f"{file.name}:{reader.line_num}",
-                        f"Encountered value(s) {values} not in a named CSV column.",
-                    ]
-                )
-            )
-        yield record
-
-
-def read_csv(f: TextIO) -> RecordStream:
-    import csv
-
-    reader = csv.DictReader(f)
-    fields = reader.fieldnames
-    if fields is None:
-        raise ValueError("First line must contain field names.")
-
-    return RecordStream(fields=list(fields), records=_csv_records(reader, f))
-
-
-def write_csv(f: TextIO, data: RecordStream) -> None:
-    import csv
-
-    writer = csv.DictWriter(f, data.fields, lineterminator="\n")
-    writer.writeheader()
-    writer.writerows(data.records)
+__all__ = ["write_hledger_journal"]
 
 
 def _get_hledger_posting_numbers(fields: Iterable[str]) -> List[int]:
@@ -154,15 +111,3 @@ def write_hledger_journal(f: TextIO, data: RecordStream) -> None:
 
             f.write(f"    {status}{account}{suffix}\n")
         f.write("\n")
-
-
-_Reader = Callable[[TextIO], RecordStream]
-_Writer = Callable[[TextIO, RecordStream], None]
-
-READERS: Dict[str, _Reader] = {
-    "csv": read_csv,
-}
-WRITERS: Dict[str, _Writer] = {
-    "csv": write_csv,
-    "hledger": write_hledger_journal,
-}
