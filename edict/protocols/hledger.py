@@ -4,7 +4,7 @@ from __future__ import annotations
 import re
 from typing import Iterable, List, TextIO
 
-from ..types import RecordStream
+from ..types import Record, RecordStream
 
 __all__ = ["write_hledger_journal"]
 
@@ -26,6 +26,11 @@ def _get_hledger_posting_numbers(fields: Iterable[str]) -> List[int]:
     return list(sorted(posting_numbers))
 
 
+# If currency matches then must quote it
+# See isNonsimpleCommodityChar in hledger source
+_QUOTE_CURRENCY_PATTERN = re.compile(r'[-+\d\s.@*;"}{=]')
+
+
 def write_hledger_journal(f: TextIO, data: RecordStream) -> None:
     """Write an hledger journal file.
 
@@ -41,73 +46,80 @@ def write_hledger_journal(f: TextIO, data: RecordStream) -> None:
     The caller is responsible for ensuring that record values are appropriate.
     For example, date must be formatted as YYYY-MM-DD (or / or . instead of -)
     """
-    # If currency matches then must quote it
-    # See isNonsimpleCommodityChar in hledger source
-    quote_currency_match = re.compile(r'[-+\d\s.@*;"}{=]')
 
     for record in data.records:
-        date = record["date"]  # required
-        if date2 := record.get("date2", ""):
-            date2 = f"={date2}"
-        if status := record.get("status", ""):
-            status = f" {status}"
-        if code := record.get("code", ""):
-            code = f" ({code})"
-        if description := record.get("description", ""):
-            description = f" {description}"
-        if comment := record.get("comment", ""):
-            comment = f"  ; {comment}"
-        f.write(f"{date}{date2}{status}{code}{description}{comment}\n")
+        _write_record(f, record)
 
-        default_currency = record.get("currency", "")
-        if quote_currency_match.search(default_currency):
-            default_currency = '"' + default_currency + '"'
 
-        for n in _get_hledger_posting_numbers(record):
-            # _get_hledger_posting_numbers should only return values that exist
-            account = record[f"account{n}"]
-            if not account:
-                continue
+def _write_record(f: TextIO, record: Record) -> None:
+    """Write a record as an hledger transaction."""
+    date = record["date"]  # required
+    if date2 := record.get("date2", ""):
+        date2 = f"={date2}"
+    if status := record.get("status", ""):
+        status = f" {status}"
+    if code := record.get("code", ""):
+        code = f" ({code})"
+    if description := record.get("description", ""):
+        description = f" {description}"
+    if comment := record.get("comment", ""):
+        comment = f"  ; {comment}"
+    f.write(f"{date}{date2}{status}{code}{description}{comment}\n")
 
-            if status := record.get(f"status{n}", ""):
-                status = f" {status}"
+    default_currency = record.get("currency", "")
+    if _QUOTE_CURRENCY_PATTERN.search(default_currency):
+        default_currency = '"' + default_currency + '"'
 
-            if comment := record.get(f"comment{n}", ""):
-                comment = f"  ; {comment}"
+    for n in _get_hledger_posting_numbers(record):
+        _write_posting(f, record, n, default_currency)
+    f.write("\n")
 
-            if record.get(f"virtual{n}"):
-                account = f"({account})"
-            elif record.get(f"balanced virtual{n}"):
-                account = f"[{account}]"
 
-            currency = record.get(f"currency{n}")
-            if not currency:
-                currency = default_currency
-            elif quote_currency_match.search(currency):
-                currency = f'"{currency}"'
+def _write_posting(f: TextIO, record: Record, n: int, default_currency: str) -> None:
+    """Write the n-th posting of an hledger transaction."""
+    # _get_hledger_posting_numbers should only return values that exist
+    account = record[f"account{n}"]
+    if not account:
+        return
 
-            amount = record.get(f"amount{n}", "")
-            if amount:
-                if currency:
-                    # If the length of the currency field is > 1 then it's probably a
-                    # commodity rather than a currency symbol so separate from the
-                    # amount with a space.
-                    currency_sep = " " if len(currency) > 1 else ""
-                    amount = f"{currency}{currency_sep}{amount}"
+    if status := record.get(f"status{n}", ""):
+        status = f" {status}"
 
-                if unitprice := record.get(f"unitprice{n}"):
-                    amount = f"{amount} @ {unitprice}"
-                elif totalprice := record.get(f"totalprice{n}"):
-                    amount = f"{amount} @@ {totalprice}"
+    if comment := record.get(f"comment{n}", ""):
+        comment = f"  ; {comment}"
 
-            balance = record.get(f"balance{n}", "")
-            if balance and currency:
-                balance = f"{currency}{balance}"
-            if balance:
-                balance = f" = {balance}"
+    if record.get(f"virtual{n}"):
+        account = f"({account})"
+    elif record.get(f"balanced virtual{n}"):
+        account = f"[{account}]"
 
-            if suffix := f"{amount}{balance}{comment}":
-                suffix = f"  {suffix}"
+    currency = record.get(f"currency{n}")
+    if not currency:
+        currency = default_currency
+    elif _QUOTE_CURRENCY_PATTERN.search(currency):
+        currency = f'"{currency}"'
 
-            f.write(f"    {status}{account}{suffix}\n")
-        f.write("\n")
+    amount = record.get(f"amount{n}", "")
+    if amount:
+        if currency:
+            # If the length of the currency field is > 1 then it's probably a
+            # commodity rather than a currency symbol so separate from the
+            # amount with a space.
+            currency_sep = " " if len(currency) > 1 else ""
+            amount = f"{currency}{currency_sep}{amount}"
+
+        if unitprice := record.get(f"unitprice{n}"):
+            amount = f"{amount} @ {unitprice}"
+        elif totalprice := record.get(f"totalprice{n}"):
+            amount = f"{amount} @@ {totalprice}"
+
+    balance = record.get(f"balance{n}", "")
+    if balance and currency:
+        balance = f"{currency}{balance}"
+    if balance:
+        balance = f" = {balance}"
+
+    if suffix := f"{amount}{balance}{comment}":
+        suffix = f"  {suffix}"
+
+    f.write(f"    {status}{account}{suffix}\n")
