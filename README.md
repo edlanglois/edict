@@ -26,11 +26,11 @@ The following is a simple script for categorizing transactions.
 date = read_date(date, "%d/%m/%Y")
 
 # Check if "moe's tavern" is a substring of the "description" variable
-if "moe's tavern" then         
+if "moe's tavern" then
     account = "Expenses:Drinks"
 
-# Check if amount is greater than 0. Numerical comparison, not string comparison.
-# There are no string comparisons in edict.
+# Check if amount is greater than 0.
+# Numerical comparison because one side is a number.
 elif amount > 0 then
     account = "Income:Uncategorized"
 else
@@ -44,6 +44,64 @@ See the `.edt` files in [tests/files](tests/files) for more examples.
 ```sh
 pip install .
 ```
+
+## Specification
+
+### Directives
+Directives are special function calls that can be evaluated before running.
+They may affect the structure of the edict program.
+
+#### Header Directives
+Header directives appear at the top of the file and establish some context for
+the program.
+
+* `@case_insensitive`
+  Ignore case for string matching and comparisons.
+
+* `@default_field(field)`
+   Use the field `field` with implicit match statements.
+
+* `@output_fields(field1, field2, ...)`
+   Restrict the output fields. Only the matching field names will be included
+   in the output (for outputs with configurable output fields).
+   Currently, only applies to CSV output.
+
+* `@reverse`
+   Reverse the order of the input records.
+
+#### Inline Directives
+Inline directives can go anywhere a regular statement goes.
+
+* `@@import("relative/path/to/script.edt")`
+   Import another edict script and apply it at this location.
+
+### Builtin Functions
+The available functions are:
+
+* `as_number(x)`
+   Interpret the value `x` as a number.
+   This is useful when comparing two variables to force numeric comparisons.
+   For example, `a == b` does string comparison while `as_number(a) == b`
+   does numeric comparison.
+
+* `log(arg1, arg2, ...)`
+   Log all arguments to standard error when executed.
+   Takes any number of arguments.
+
+* `read_date(date_string, format_string)`
+   Read a date a format as an ISO 8601 string.
+   The format string is the same used by [Python strptime][spt]
+
+* `record_str()`
+   Format the current record as a string.
+   Used for debugging with `log(record_str())`.
+
+* `substring(string, start, end)`
+   The sub-string of `string` from `start` (inclusive) to `end` (exclusive).
+   Negative indices count from the end. The last character has index `-1`.
+   Equivalent to the Python expression `string[start:end]`.
+
+[spt]: https://docs.python.org/3/library/datetime.html#strftime-strptime-behavior
 
 ## Development
 ### Editable Install
