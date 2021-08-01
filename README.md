@@ -171,8 +171,9 @@ the program.
 #### Inline Directives
 Inline directives can go anywhere a regular statement goes.
 
-* `@@import("relative/path/to/script.edt")`
+* `@@import("path/to/script.edt")`
    Import another edict script and apply it at this location.
+   Either an absolute or a relative path.
 
 
 ## Development
