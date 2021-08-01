@@ -74,7 +74,7 @@ class Identifier(ProgramElement[str]):
     """Stores a record field name."""
 
     def __init__(self, name: str):
-        super().__init__(dtype=DataType.INDEFINITE_STRING)
+        super().__init__(dtype=DataType.INDETERMINANT_STRING)
         self.name = name
 
     def _call(self, record: Record) -> str:
@@ -140,9 +140,9 @@ class ValueComparisonOperator(BinaryOperator[bool, Any, Any]):
     ):
         # Default to STRING if neither is concrete
         dtype_in = DataType.STRING
-        if left.dtype != DataType.INDEFINITE_STRING:
+        if left.dtype != DataType.INDETERMINANT_STRING:
             dtype_in = left.dtype
-        elif right.dtype != DataType.INDEFINITE_STRING:
+        elif right.dtype != DataType.INDETERMINANT_STRING:
             dtype_in = right.dtype
         if dtype_in not in (DataType.STRING, DataType.NUMBER):
             raise ValueError("Comparison only defined for strings and numbers")

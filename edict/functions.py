@@ -62,7 +62,7 @@ def _check_interpret_type(value: ProgramElement, dtype: DataType) -> None:
     Raises:
         EPrepareError if `value` cannot be interpreted as `dtype`.
     """
-    if value.dtype == dtype or value.dtype == DataType.INDEFINITE_STRING:
+    if value.dtype == dtype or value.dtype == DataType.INDETERMINANT_STRING:
         return
     raise EPrepareError(f"Cannot interpret {value.dtype} as {dtype}")
 

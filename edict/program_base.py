@@ -17,7 +17,7 @@ class DataType(Enum):
        STRING: A string.
        NUMBER: A decimal number.
        BOOLEAN: A boolean value.
-       INDEFINITE_STRING: A string that can be cast to other types.
+       INDETERMINANT_STRING: A string that can be cast to other types.
            Record values have this type.
        REGEX: A regular expression.
     """
@@ -26,7 +26,7 @@ class DataType(Enum):
     STRING = 1
     NUMBER = 2
     BOOLEAN = 3
-    INDEFINITE_STRING = 4
+    INDETERMINANT_STRING = 4
     REGEX = 5
 
     def __str__(self):
@@ -114,7 +114,7 @@ class _StringEncodeBoolean(ProgramElement[str]):
 
 def string_encode(value: ProgramElement) -> ProgramElement[str]:
     """Encode the given value as a string."""
-    if value.dtype in (DataType.STRING, DataType.INDEFINITE_STRING):
+    if value.dtype in (DataType.STRING, DataType.INDETERMINANT_STRING):
         return value
     if value.dtype == DataType.NUMBER:
         return _StringEncodeNumber(value)
