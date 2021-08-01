@@ -47,6 +47,17 @@ pip install .
 
 ## Specification
 
+### Variables
+Variables in Edict name fields (keys) in the current record.
+A variable is identified with either an unquoted sequence of word characters
+(letters, digits, and underscores) that does not start with a digit
+(e.g. `SomeVar_42`) or an arbitrary string quoted with braces `{` and `}` (e.g.
+`{Some Var 42}`) where `\` escapes the following character.
+
+Variables do not need to be initialized or defined before use.
+All variables are stored as strings and uninitialized variables are empty
+strings.
+
 ### Literals
 Literals are used for expressing a value in an expression.
 There are four literal types: String, Boolean, Number, and Regular Expression.
