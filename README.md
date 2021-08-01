@@ -47,6 +47,39 @@ pip install .
 
 ## Specification
 
+### Literals
+Literals are used for expressing a value in an expression.
+There are four literal types: String, Boolean, Number, and Regular Expression.
+
+* String: A quoted UTF-8 string: `"some string"`
+* Boolean: `true` or `false`
+* Number: An high-precision decimal number with exact arithmetic.
+          Not floating-point. Uses the Python [Decimal][decimal] type.
+* Regular Expression: A Python [regular expression][regex]
+          used only in match statements. Quoted with slashes (`/`):
+          `/some regex *\d+/`.
+
+[decimal]: https://docs.python.org/3/library/decimal.html
+[regex]: https://docs.python.org/3/library/re.html#regular-expression-syntax
+
+### Type System
+Expressions and literals are strongly typed in Edict.
+The possible types are `STRING`, `NUMBER`, `BOOLEAN`, `REGEX`, or `NONE` for
+expressions with no value.
+Implicit casting is never performed with these types and it is an error to use
+a type where it is not expected.
+
+Variables in Edict are weakly typed. All variables are stored as strings and
+have the type `INDETERMINANT_STRING`, which is implicitly cast to `STRING` or
+`NUMBER` depending on context. For example, `var == "0.0"` interprets `var`
+as a string while `var == 0.0` interprets `var` as a number.
+The inferred type of a variable does not persist between uses in a program, even
+within the same statement, so the expression `var == 0 or var == "1"` is legal.
+
+When the context is ambiguous, like in `var1 == var2`, variables are interpreted
+as `STRING`. The `as_number` function can be used to explicitly cast variables
+as `NUMBER`.
+
 ### Directives
 Directives are special function calls that can be evaluated before running.
 They may affect the structure of the edict program.
@@ -78,7 +111,7 @@ Inline directives can go anywhere a regular statement goes.
 ### Builtin Functions
 The available functions are:
 
-* `as_number(x)`
+* `as_number(x) -> NUMBER`
    Interpret the value `x` as a number.
    This is useful when comparing two variables to force numeric comparisons.
    For example, `a == b` does string comparison while `as_number(a) == b`
@@ -88,15 +121,15 @@ The available functions are:
    Log all arguments to standard error when executed.
    Takes any number of arguments.
 
-* `read_date(date_string, format_string)`
+* `read_date(date_string: STRING, format_string: STRING) -> STRING`
    Read a date a format as an ISO 8601 string.
    The format string is the same used by [Python strptime][spt]
 
-* `record_str()`
+* `record_str() -> STRING`
    Format the current record as a string.
    Used for debugging with `log(record_str())`.
 
-* `substring(string, start, end)`
+* `substring(string: STRING, start: NUMBER, end: NUMBER) -> NUMBER`
    The sub-string of `string` from `start` (inclusive) to `end` (exclusive).
    Negative indices count from the end. The last character has index `-1`.
    Equivalent to the Python expression `string[start:end]`.
