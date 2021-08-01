@@ -1,5 +1,6 @@
 """Base definitions for Edict program objects."""
 
+from dataclasses import dataclass
 from decimal import Decimal
 from enum import Enum
 from typing import Generic, Optional, TypeVar
@@ -66,22 +67,30 @@ class ERuntimeError(Error):
         return error_str
 
 
+@dataclass
+class RuntimeContext:
+    """Runtime context for an Edict program"""
+
+    input_protocol: str
+    output_protocol: str
+
+
 class ProgramElement(Generic[T]):
     """Interface of a program element."""
 
     def __init__(self, dtype: DataType):
         self.dtype = dtype
 
-    def __call__(self, record: Record) -> T:
+    def __call__(self, record: Record, context: RuntimeContext) -> T:
         """Evaluate on the given record."""
         try:
-            return self._call(record)
+            return self._call(record, context)
         except ERuntimeError:
             raise
         except Exception as e:
             raise ERuntimeError(f"Error in {self!s}:\n{e!s}", record=record) from e
 
-    def _call(self, record: Record) -> T:
+    def _call(self, record: Record, context: RuntimeContext) -> T:
         """Evaluate on the given record."""
         raise NotImplementedError
 
@@ -92,8 +101,8 @@ class _StringEncodeNumber(ProgramElement[str]):
     def __init__(self, inner: ProgramElement[Decimal]):
         self.inner = inner
 
-    def _call(self, record: Record) -> str:
-        return str(self.inner(record))
+    def _call(self, record: Record, context: RuntimeContext) -> str:
+        return str(self.inner(record, context))
 
     def __str__(self):
         return f"{self.__class__.__name__}({self.inner})"
@@ -105,8 +114,8 @@ class _StringEncodeBoolean(ProgramElement[str]):
     def __init__(self, inner: ProgramElement[bool]):
         self.inner = inner
 
-    def _call(self, record: Record) -> str:
-        return "true" if self.inner(record) else "false"
+    def _call(self, record: Record, context: RuntimeContext) -> str:
+        return "true" if self.inner(record, context) else "false"
 
     def __str__(self):
         return f"{self.__class__.__name__}({self.inner})"

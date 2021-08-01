@@ -4,14 +4,13 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Optional, TextIO, Union
 
 from edict import parse
+from edict.program import Program, RuntimeContext
 from edict.protocols import READERS, WRITERS
 from edict.stream import StreamEditor
 from edict.types import RecordStream
 
 if TYPE_CHECKING:
     import os
-
-    from edict.program import Program
 
 __all__ = [
     "Edict",
@@ -32,10 +31,13 @@ class Edict:
     ) -> None:
         read = READERS[read_protocol]()
         write = WRITERS[write_protocol]()
-        write(out, self.transform(read(in_)))
+        context = RuntimeContext(
+            input_protocol=read_protocol, output_protocol=write_protocol
+        )
+        write(out, self.transform(read(in_), context))
         pass
 
-    def transform(self, data: RecordStream) -> RecordStream:
+    def transform(self, data: RecordStream, context: RuntimeContext) -> RecordStream:
         """Transform a RecordStream
 
         Note that the individual records are modified in-place.
@@ -46,7 +48,7 @@ class Edict:
         fields = program.fields(data.fields)
         return RecordStream(
             fields=fields,
-            records=(program.transform(record) for record in data.records),
+            records=(program.transform(record, context) for record in data.records),
         )
 
 

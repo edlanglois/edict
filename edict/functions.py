@@ -13,7 +13,14 @@ import sys
 from decimal import Decimal
 from typing import Callable, Dict, Optional, Sequence, Type
 
-from .program_base import DataType, EPrepareError, ProgramElement, T, string_encode
+from .program_base import (
+    DataType,
+    EPrepareError,
+    ProgramElement,
+    RuntimeContext,
+    T,
+    string_encode,
+)
 from .types import Record
 
 __all__ = [
@@ -86,8 +93,8 @@ class AsNumber(_ImplicitFunctionCall[Decimal]):
         super().__init__(inner=inner, dtype=dtype, implicit=implicit)
         self.separator = separator
 
-    def _call(self, record: Record) -> Decimal:
-        value = self.inner(record)
+    def _call(self, record: Record, context: RuntimeContext) -> Decimal:
+        value = self.inner(record, context)
         if isinstance(value, Decimal):
             return value
         assert isinstance(
@@ -112,8 +119,8 @@ class AsString(_ImplicitFunctionCall[str]):
         _check_interpret_type(inner, dtype)
         super().__init__(inner=inner, dtype=dtype, implicit=implicit)
 
-    def _call(self, record: Record) -> str:
-        return self.inner(record)
+    def _call(self, record: Record, context: RuntimeContext) -> str:
+        return self.inner(record, context)
 
 
 def as_string(inner: ProgramElement) -> ProgramElement[str]:
@@ -139,8 +146,8 @@ class CaseFold(_ImplicitFunctionCall[str]):
     def __init__(self, inner: ProgramElement[str], implicit: bool = False):
         super().__init__(inner=inner, dtype=DataType.STRING, implicit=implicit)
 
-    def _call(self, record: Record) -> str:
-        return self.inner(record).casefold()
+    def _call(self, record: Record, context: RuntimeContext) -> str:
+        return self.inner(record, context).casefold()
 
 
 def casefold(inner: ProgramElement[str]) -> ProgramElement[str]:
@@ -155,8 +162,8 @@ class Log(FunctionCall[None]):
     def __init__(self, *args: ProgramElement):
         self.args = [string_encode(arg) for arg in args]
 
-    def _call(self, record: Record) -> None:
-        values = [arg(record) for arg in self.args]
+    def _call(self, record: Record, context: RuntimeContext) -> None:
+        values = [arg(record, context) for arg in self.args]
         print(*values, file=sys.stderr)
 
 
@@ -172,12 +179,12 @@ class ReadDate(FunctionCall[str]):
         self.date_string = as_string(date_string)
         self.date_format = as_string(date_format)
 
-    def _call(self, record: Record) -> str:
+    def _call(self, record: Record, context: RuntimeContext) -> str:
         import datetime
 
         return (
             datetime.datetime.strptime(
-                self.date_string(record), self.date_format(record)
+                self.date_string(record, context), self.date_format(record, context)
             )
             .date()
             .isoformat()
@@ -196,7 +203,7 @@ class RecordStr(FunctionCall[str]):
         super().__init__(dtype=DataType.STRING)
         self.field_separator = field_separator
 
-    def _call(self, record: Record) -> str:
+    def _call(self, record: Record, context: RuntimeContext) -> str:
         return self.field_separator.join(
             f"{key}: {value}" for key, value in record.items()
         )
@@ -241,11 +248,11 @@ class SubString(FunctionCall[str]):
         self.start = as_number(start)
         self.end = as_number(end) if end is not None else None
 
-    def _call(self, record: Record) -> str:
-        inner_value = self.inner(record)
-        start_value = _decimal_as_int(self.start(record))
+    def _call(self, record: Record, context: RuntimeContext) -> str:
+        inner_value = self.inner(record, context)
+        start_value = _decimal_as_int(self.start(record, context))
         if self.end is not None:
-            end_value: Optional[int] = _decimal_as_int(self.end(record))
+            end_value: Optional[int] = _decimal_as_int(self.end(record, context))
         else:
             end_value = None
         return inner_value[start_value:end_value]
