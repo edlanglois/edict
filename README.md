@@ -91,6 +91,29 @@ When the context is ambiguous, like in `var1 == var2`, variables are interpreted
 as `STRING`. The `as_number` function can be used to explicitly cast variables
 as `NUMBER`.
 
+### Operators
+The following operators are available:
+
+* Comparison: `==`, `!=`, `<`, `<=`, `>`, `>=`. Compare numbers or strings.
+    The types of both sides must be the same.
+
+* Match: `string ~ pattern`. Check if pattern matches a substring of `string`.
+    If `pattern` is a string then uses string equalty.
+    If `pattern` is a regular expression then performs regular expression
+    matching (use `^` and `$` to match the entire string rather than
+    a substring).
+    In either case, the matching is case sensitive unless the
+    `@case_insensitive` directive has been defined.
+
+* Math: `*` (multiplication), `/` (division), `%` (mod), `+` (addition),
+    `-` (subtraction), `-` (unary minus). Both operands must be numbers.
+
+* String: `.` (string concatenation). Both operands must be strings.
+
+* Assignment: `identifier = value`. Assign value to identifier. The value is
+  stored as a string.
+
+
 ### Builtin Functions
 The available functions are:
 
