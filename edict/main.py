@@ -57,6 +57,6 @@ def loads(text: str) -> Edict:
     return Edict(program, pre_transform)
 
 
-def load(file: Union[str, bytes, os.PathLike]) -> Edict:
+def load(file: Union[str, os.PathLike]) -> Edict:
     program, pre_transform = parse.parse_file(file)
     return Edict(program, pre_transform)
