@@ -154,6 +154,18 @@ def casefold(inner: ProgramElement[str]) -> ProgramElement[str]:
     return CaseFold(inner, implicit=True)
 
 
+class InputProtocol(FunctionCall[str]):
+    """Name of the input protocol in the current runtime context."""
+
+    name = "input_protocol"
+
+    def __init__(self):
+        super().__init__(dtype=DataType.STRING)
+
+    def _call(self, record: Record, context: RuntimeContext) -> str:
+        return context.input_protocol
+
+
 class Log(FunctionCall[None]):
     """Log all arguments to standard error."""
 
@@ -165,6 +177,18 @@ class Log(FunctionCall[None]):
     def _call(self, record: Record, context: RuntimeContext) -> None:
         values = [arg(record, context) for arg in self.args]
         print(*values, file=sys.stderr)
+
+
+class OutputProtocol(FunctionCall[str]):
+    """Name of the output protocol in the current runtime context."""
+
+    name = "output_protocol"
+
+    def __init__(self):
+        super().__init__(dtype=DataType.STRING)
+
+    def _call(self, record: Record, context: RuntimeContext) -> str:
+        return context.output_protocol
 
 
 class ReadDate(FunctionCall[str]):
@@ -261,7 +285,9 @@ class SubString(FunctionCall[str]):
 # Public API functions
 _PUBLIC_FUNCTIONS: Sequence[Type[FunctionCall]] = (
     AsNumber,
+    InputProtocol,
     Log,
+    OutputProtocol,
     ReadDate,
     RecordStr,
     SubString,

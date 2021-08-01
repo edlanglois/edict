@@ -127,9 +127,15 @@ The available functions are:
    For example, `a == b` does string comparison while `as_number(a) == b`
    does numeric comparison.
 
+* `input_protocol() -> STRING`
+   The name of the input protocol in the current program execution.
+
 * `log(arg1, arg2, ...)`
    Log all arguments to standard error when executed.
    Takes any number of arguments.
+
+* `output_protocol() -> STRING`
+   The name of the output protocol in the current program execution.
 
 * `read_date(date_string: STRING, format_string: STRING) -> STRING`
    Read a date a format as an ISO 8601 string.

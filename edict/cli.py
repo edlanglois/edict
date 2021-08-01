@@ -85,7 +85,9 @@ def main(argv=None):
     transformers = [load(f) for f in args.edict_file]
     read = READERS[args.input_format]()
     write = WRITERS[args.output_format]()
-    context = RuntimeContext(input_protocol=read, output_protocol=write)
+    context = RuntimeContext(
+        input_protocol=args.input_format, output_protocol=args.output_format
+    )
     # CSV files somtimes (rarely) contain a byte order mark as the first character
     # Apparently Excel does this when exporting to CSV.
     # Encoding 'utf-8-sig' ignores this mark if it exists.
