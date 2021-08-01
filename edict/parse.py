@@ -4,28 +4,32 @@ from __future__ import annotations
 import functools
 import operator
 import os
+import pathlib
 import re
+from dataclasses import dataclass
 from decimal import Decimal
-from typing import Any, Callable, Dict, Optional, Tuple, Union
+from pathlib import Path
+from typing import Any, Callable, List, Optional, Tuple, Union
 
 import lark
 import pkg_resources
 
-from edict import program, stream
+from . import program
+from .stream import STREAM_EDITORS, StreamEditor
 
 __all__ = ["parse_file", "parse_text"]
 
-PathLike = Union[str, bytes, os.PathLike]
+PathLike = Union[str, os.PathLike]
 
 
-def parse_file(file: PathLike) -> Tuple[program.Program, Optional[stream.StreamEditor]]:
+def parse_file(file: PathLike) -> Tuple[program.Program, Optional[StreamEditor]]:
     with open(file, "r") as f:
-        return parse_text(text=f.read(), file_path=str(file))
+        return parse_text(text=f.read(), file_path=file)
 
 
 def parse_text(
     text: str, file_path: Optional[PathLike] = None
-) -> Tuple[program.Program, Optional[stream.StreamEditor]]:
+) -> Tuple[program.Program, Optional[StreamEditor]]:
     parser = _get_parser(file_path=file_path)
     # parser.parse() value is the return value of _TransformToProgram.start()
     return parser.parse(text)  # type: ignore
@@ -123,27 +127,47 @@ def _decimal_mod(a: Decimal, b: Decimal) -> Decimal:
     return (a % b).copy_sign(b)
 
 
-def _directive_case_insensitive(context):
-    context["case_insensitive"] = True
+@dataclass
+class ScriptContext:
+    """Context for a particular Edict script (file).
+
+    Attributes:
+        file_path: Script file path
+        case_insensitive: Whether match operations are case insensitive
+        default_field: Default field to use with implicit matching
+        output_fields: Restrict the output dictionary to have these fields
+        pre_transform: Transformation to apply to the record stream before per-record
+                       processing. Only allowed on the top-level script.
+    """
+
+    file_path: Optional[Path] = None
+    case_insensitive: bool = False
+    default_field: Optional[program.Identifier] = None
+    output_fields: Optional[List[str]] = None
+    pre_transform: Optional[StreamEditor] = None
 
 
-def _directive_default_field(context, identifier):
+def _directive_case_insensitive(context: ScriptContext):
+    context.case_insensitive = True
+
+
+def _directive_default_field(context: ScriptContext, identifier):
     if identifier.dtype != program.DataType.STRING:
         raise ValueError(f"Expected STRING but got {identifier.dtype}")
-    context["default_field"] = program.Identifier(identifier.value)
+    context.default_field = program.Identifier(identifier.value)
 
 
-def _directive_output_fields(context, *fields):
+def _directive_output_fields(context: ScriptContext, *fields):
     field_names = []
     for field in fields:
         if field.dtype != program.DataType.STRING:
             raise ValueError(f"Expected STRING but got {field.dtype}")
         field_names.append(field.value)
-    context["output_fields"] = field_names
+    context.output_fields = field_names
 
 
-def _directive_pre_transform(context, name, *args):
-    context["pre_transform"] = stream.STREAM_EDITORS[name](*args)
+def _directive_pre_transform(context: ScriptContext, name, *args):
+    context.pre_transform = STREAM_EDITORS[name](*args)
 
 
 HEADER_DIRECTIVES = {
@@ -154,16 +178,16 @@ HEADER_DIRECTIVES = {
 }
 
 
-def _directive_import(context, file):
+def _directive_import(context: ScriptContext, file: program.Literal[str]):
     if file.dtype != program.DataType.STRING:
         raise ValueError(f"Expected STRING but got {file.dtype}")
     import_file_path = file.value
     if not os.path.isabs(import_file_path):
-        try:
-            source_path = context["file_path"]
-        except KeyError:
+        if context.file_path is None:
             raise ValueError("Must set `source_path` for relative imports.")
-        import_file_path = os.path.join(os.path.dirname(source_path), import_file_path)
+        import_file_path = os.path.join(
+            os.path.dirname(context.file_path), import_file_path
+        )
 
     subprogram, pre_transform = parse_file(import_file_path)
     if pre_transform is not None:
@@ -178,9 +202,9 @@ class _TransformToProgram(lark.Transformer):
     """Transform to a structured Edict program"""
 
     def __init__(self, file_path: Optional[PathLike] = None):
-        self._context: Dict[str, Any] = {}
+        self._context = ScriptContext()
         if file_path is not None:
-            self._context["file_path"] = file_path
+            self._context.file_path = pathlib.Path(file_path)
 
     def header_directive(self, args):
         name, *fargs = args
@@ -224,12 +248,13 @@ class _TransformToProgram(lark.Transformer):
 
         Applies implicit matching to string and regex objects."""
         if value.dtype in (program.DataType.STRING, program.DataType.REGEX):
-            default_field = self._context.get("default_field")
+            default_field = self._context.default_field
             if default_field is None:
                 raise ValueError("Must set `default_field` to use implicit matching.")
-            case_insensitive = self._context.get("case_insensitive", False)
             return self._make_match(
-                pattern=value, string=default_field, case_insensitive=case_insensitive
+                pattern=value,
+                string=default_field,
+                case_insensitive=self._context.case_insensitive,
             )
         return value
 
@@ -284,17 +309,18 @@ class _TransformToProgram(lark.Transformer):
             return args[0]
 
         left, t_op, right = args
-        case_insensitive = self._context.get("case_insensitive", False)
         if t_op.type == "MATCH":
             return self._make_match(
-                pattern=right, string=left, case_insensitive=case_insensitive
+                pattern=right,
+                string=left,
+                case_insensitive=self._context.case_insensitive,
             )
         else:
             return program.ValueComparisonOperator(
                 left=left,
                 right=right,
                 op=_OPERATOR_FUNCTIONS[t_op.type],
-                case_insensitive=case_insensitive,
+                case_insensitive=self._context.case_insensitive,
             )
 
     def _make_match(
@@ -370,15 +396,11 @@ class _TransformToProgram(lark.Transformer):
         header, statements = args
         if not isinstance(statements, program.Statements):
             statements = program.Statements([statements])
-        try:
-            output_fields = header["output_fields"]
-        except KeyError:
-            pass
-        else:
-            statements.append(program.Fields(output_fields))
+        if header.output_fields is not None:
+            statements.append(program.Fields(header.output_fields))
         return (
             program.Program(statements=statements),
-            self._context.get("pre_transform"),
+            self._context.pre_transform,
         )
 
 
