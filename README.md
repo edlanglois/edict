@@ -105,6 +105,10 @@ The following operators are available:
     In either case, the matching is case sensitive unless the
     `@case_insensitive` directive has been defined.
 
+* Implicit Match: `pattern`. A pattern on its own expands to
+    `default_field ~ pattern`, where `default_field` is the variable
+    set by the `@default_field` directive.
+
 * Math: `*` (multiplication), `/` (division), `%` (mod), `+` (addition),
     `-` (subtraction), `-` (unary minus). Both operands must be numbers.
 
