@@ -1,5 +1,5 @@
 # edict: Eric's Dictionary Transformer
-A simple language for specifying transformations to dictionaries
+A simple interpreted language for specifying transformations to dictionaries
 (also called records or key-value-stores).
 
 An edict program describes a series of rules and assignments that are applied to
