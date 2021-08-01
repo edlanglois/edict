@@ -91,6 +91,34 @@ When the context is ambiguous, like in `var1 == var2`, variables are interpreted
 as `STRING`. The `as_number` function can be used to explicitly cast variables
 as `NUMBER`.
 
+### Builtin Functions
+The available functions are:
+
+* `as_number(x) -> NUMBER`
+   Interpret the value `x` as a number.
+   This is useful when comparing two variables to force numeric comparisons.
+   For example, `a == b` does string comparison while `as_number(a) == b`
+   does numeric comparison.
+
+* `log(arg1, arg2, ...)`
+   Log all arguments to standard error when executed.
+   Takes any number of arguments.
+
+* `read_date(date_string: STRING, format_string: STRING) -> STRING`
+   Read a date a format as an ISO 8601 string.
+   The format string is the same used by [Python strptime][spt]
+
+* `record_str() -> STRING`
+   Format the current record as a string.
+   Used for debugging with `log(record_str())`.
+
+* `substring(string: STRING, start: NUMBER, end: NUMBER) -> NUMBER`
+   The sub-string of `string` from `start` (inclusive) to `end` (exclusive).
+   Negative indices count from the end. The last character has index `-1`.
+   Equivalent to the Python expression `string[start:end]`.
+
+[spt]: https://docs.python.org/3/library/datetime.html#strftime-strptime-behavior
+
 ### Directives
 Directives are special function calls that can be evaluated before running.
 They may affect the structure of the edict program.
@@ -119,33 +147,6 @@ Inline directives can go anywhere a regular statement goes.
 * `@@import("relative/path/to/script.edt")`
    Import another edict script and apply it at this location.
 
-### Builtin Functions
-The available functions are:
-
-* `as_number(x) -> NUMBER`
-   Interpret the value `x` as a number.
-   This is useful when comparing two variables to force numeric comparisons.
-   For example, `a == b` does string comparison while `as_number(a) == b`
-   does numeric comparison.
-
-* `log(arg1, arg2, ...)`
-   Log all arguments to standard error when executed.
-   Takes any number of arguments.
-
-* `read_date(date_string: STRING, format_string: STRING) -> STRING`
-   Read a date a format as an ISO 8601 string.
-   The format string is the same used by [Python strptime][spt]
-
-* `record_str() -> STRING`
-   Format the current record as a string.
-   Used for debugging with `log(record_str())`.
-
-* `substring(string: STRING, start: NUMBER, end: NUMBER) -> NUMBER`
-   The sub-string of `string` from `start` (inclusive) to `end` (exclusive).
-   Negative indices count from the end. The last character has index `-1`.
-   Equivalent to the Python expression `string[start:end]`.
-
-[spt]: https://docs.python.org/3/library/datetime.html#strftime-strptime-behavior
 
 ## Development
 ### Editable Install
