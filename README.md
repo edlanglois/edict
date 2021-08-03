@@ -181,6 +181,22 @@ Inline directives can go anywhere a regular statement goes.
    Import another edict script and apply it at this location.
    Either an absolute or a relative path.
 
+### Protocols
+Protocols define input and output formats for the data stream.
+The default protocol for both reading and writing is `csv`.
+
+The available protocols are:
+
+* `csv` - Comma-separated values.
+    The first line must be a header containing column names.
+    Individual rows may have fewer columns than the header but not more.
+
+* `hledger` - The [hledger](https://hledger.org/) journal format (write only).
+    Looks for specific named fields to construct the output transactions.
+    The field names similar to those used by the
+    [hledger CSV conversion](https://hledger.org/hledger.html#csv-format);
+    see the implementation in
+    [hledger.py](edict/protocols/hledger.py) for details.
 
 ## Development
 ### Editable Install
