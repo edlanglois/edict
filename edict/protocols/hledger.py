@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import re
-from typing import Iterable, List, TextIO
+from typing import Iterable, List, Optional, TextIO
 
 from ..types import Record, RecordStream
 
@@ -75,6 +75,17 @@ def _write_record(f: TextIO, record: Record) -> None:
     f.write("\n")
 
 
+def _with_currency(amount: str, currency: Optional[str]) -> str:
+    """Format an amount with a currency or commodity."""
+    if currency is None:
+        return amount
+    # If the length of the currency field is > 1 then it is probably a
+    # commodity rather than a currency symbol so separate from the
+    # amount with a space.
+    currency_sep = " " if len(currency) > 1 else ""
+    return f"{currency}{currency_sep}{amount}"
+
+
 def _write_posting(f: TextIO, record: Record, n: int, default_currency: str) -> None:
     """Write the n-th posting of an hledger transaction."""
     # _get_hledger_posting_numbers should only return values that exist
@@ -99,19 +110,20 @@ def _write_posting(f: TextIO, record: Record, n: int, default_currency: str) -> 
     elif _QUOTE_CURRENCY_PATTERN.search(currency):
         currency = f'"{currency}"'
 
+    price_currency = record.get(f"pricecurrency{n}")
+    if not price_currency:
+        price_currency = default_currency
+    elif _QUOTE_CURRENCY_PATTERN.search(currency):
+        price_currency = f'"{price_currency}"'
+
     amount = record.get(f"amount{n}", "")
     if amount:
-        if currency:
-            # If the length of the currency field is > 1 then it's probably a
-            # commodity rather than a currency symbol so separate from the
-            # amount with a space.
-            currency_sep = " " if len(currency) > 1 else ""
-            amount = f"{currency}{currency_sep}{amount}"
+        amount = _with_currency(amount, currency)
 
         if unitprice := record.get(f"unitprice{n}"):
-            amount = f"{amount} @ {unitprice}"
+            amount = f"{amount} @ {_with_currency(unitprice, price_currency)}"
         elif totalprice := record.get(f"totalprice{n}"):
-            amount = f"{amount} @@ {totalprice}"
+            amount = f"{amount} @@ {_with_currency(totalprice, price_currency)}"
 
     balance = record.get(f"balance{n}", "")
     if balance and currency:
