@@ -24,6 +24,7 @@ def parse_args(argv=None):
     parser = argparse.ArgumentParser(
         description=__doc__.splitlines()[0] if __doc__ else None,
     )
+    parser.add_argument("edict_file", type=pathlib.Path, nargs="*", help="Edict file")
     parser.add_argument(
         "-i",
         "--input-file",
@@ -52,7 +53,9 @@ def parse_args(argv=None):
         default="csv",
         help="Output format to write (default: csv)",
     )
-    parser.add_argument("edict_file", type=pathlib.Path, nargs="*", help="Edict file")
+    parser.add_argument(
+        "--pattern", type=str, help="Pattern format string for the pattern protocol."
+    )
     parser.add_argument("-V", "--version", action="version", version=__version__)
 
     return parser.parse_args(argv)
@@ -83,8 +86,13 @@ def main(argv=None):
     """
     args = parse_args(argv)
     transformers = [load(f) for f in args.edict_file]
-    read = READERS[args.input_format]()
-    write = WRITERS[args.output_format]()
+
+    protocol_args = {}
+    if args.pattern is not None:
+        protocol_args["pattern"] = args.pattern
+
+    read = READERS[args.input_format](protocol_args)
+    write = WRITERS[args.output_format](protocol_args)
     context = RuntimeContext(
         input_protocol=args.input_format, output_protocol=args.output_format
     )

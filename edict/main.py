@@ -1,7 +1,7 @@
 """Edict class"""
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Optional, TextIO, Union
+from typing import TYPE_CHECKING, Dict, Optional, TextIO, Union
 
 from edict import parse
 from edict.program import Program, RuntimeContext
@@ -27,10 +27,17 @@ class Edict:
         self._pre_transform = pre_transform
 
     def apply(
-        self, in_: TextIO, out: TextIO, read_protocol="csv", write_protocol="csv"
+        self,
+        in_: TextIO,
+        out: TextIO,
+        read_protocol="csv",
+        write_protocol="csv",
+        protocol_args: Optional[Dict] = None,
     ) -> None:
-        read = READERS[read_protocol]()
-        write = WRITERS[write_protocol]()
+        if protocol_args is None:
+            protocol_args = {}
+        read = READERS[read_protocol](protocol_args)
+        write = WRITERS[write_protocol](protocol_args)
         context = RuntimeContext(
             input_protocol=read_protocol, output_protocol=write_protocol
         )

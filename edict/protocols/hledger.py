@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import re
-from typing import Iterable, List, Optional, TextIO
+from typing import Dict, Iterable, List, Optional, TextIO
 
 from ..types import Record, RecordStream
 
@@ -31,7 +31,7 @@ def _get_hledger_posting_numbers(fields: Iterable[str]) -> List[int]:
 _QUOTE_CURRENCY_PATTERN = re.compile(r'[-+\d\s.@*;"}{=]')
 
 
-def write_hledger_journal(f: TextIO, data: RecordStream) -> None:
+def write_hledger_journal(f: TextIO, data: RecordStream, args: Dict) -> None:
     """Write an hledger journal file.
 
     Format Specification:

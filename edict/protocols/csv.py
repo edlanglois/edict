@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import csv
-from typing import Iterable, TextIO
+from typing import Dict, Iterable, TextIO
 
 from ..types import Record, RecordStream
 
@@ -25,7 +25,7 @@ def _csv_records(reader: csv.DictReader, file: TextIO) -> Iterable[Record]:
         yield record
 
 
-def read_csv(f: TextIO) -> RecordStream:
+def read_csv(f: TextIO, args: Dict) -> RecordStream:
     reader = csv.DictReader(f)
     fields = reader.fieldnames
     if fields is None:
@@ -34,7 +34,7 @@ def read_csv(f: TextIO) -> RecordStream:
     return RecordStream(fields=list(fields), records=_csv_records(reader, f))
 
 
-def write_csv(f: TextIO, data: RecordStream) -> None:
+def write_csv(f: TextIO, data: RecordStream, args: Dict) -> None:
     writer = csv.DictWriter(f, data.fields, lineterminator="\n")
     writer.writeheader()
     writer.writerows(data.records)
