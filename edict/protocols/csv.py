@@ -22,7 +22,7 @@ def _csv_records(reader: csv.DictReader, file: TextIO) -> Iterable[Record]:
                     ]
                 )
             )
-        yield record
+        yield {k: v for (k, v) in record.items() if v is not None}
 
 
 def read_csv(f: TextIO, args: Dict) -> RecordStream:
