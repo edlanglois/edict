@@ -84,7 +84,7 @@ def _decode_quoted_string(s: str) -> str:
 
 _ESCAPE_SEQUENCES = {
     "\\\\": "\\",
-    r"\}": "}",
+    '\\"': '"',
     r"\a": "\a",
     r"\b": "\b",
     r"\f": "\f",
@@ -92,6 +92,7 @@ _ESCAPE_SEQUENCES = {
     r"\r": "\r",
     r"\t": "\t",
     r"\v": "\v",
+    r"\}": "}",
 }
 
 _STRING_ESCAPE_PATTERN = re.compile(
