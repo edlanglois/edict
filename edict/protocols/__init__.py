@@ -30,4 +30,5 @@ WRITERS: Dict[str, Callable[[Dict], Writer]] = {
     "csv": _lazy_load("csv", "write_csv"),
     "pattern": _lazy_load("pattern", "write_pattern"),
     "hledger": _lazy_load("hledger", "write_hledger_journal"),
+    "beancount": _lazy_load("beancount", "write_beancount_journal"),
 }

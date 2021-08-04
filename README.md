@@ -204,6 +204,12 @@ The available protocols are:
     see the implementation in
     [hledger.py](edict/protocols/hledger.py) for details.
 
+* `beancount` - The [beancount](http://furius.ca/beancount/) journal format
+    (write only).
+    Currently supports transaction, open, and close directives.
+    See the implementation in [beancount.py](edict/protocols/hledger.py)
+    for details.
+
 ## Development
 ### Editable Install
 ```sh
