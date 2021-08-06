@@ -206,7 +206,7 @@ The available protocols are:
 
 * `beancount` - The [beancount](http://furius.ca/beancount/) journal format
     (write only).
-    Currently supports transaction, open, and close directives.
+    Currently supports transaction, open, close, and price directives.
     See the implementation in [beancount.py](edict/protocols/hledger.py)
     for details.
 

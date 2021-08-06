@@ -72,6 +72,12 @@ def _write_record(f: TextIO, record: Record) -> None:
         date = record["date"]
         account = record["account"]
         f.write(f"{date} close {account}\n")
+    elif directive == "price":
+        date = record["date"]
+        target = record["target"]
+        price = record["price"]
+        price_currency = record["currency"]
+        f.write(f"{date} price {target} {price} {price_currency}\n")
     else:
         raise ValueError(f"Invalid directive type {directive!r}")
 
