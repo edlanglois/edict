@@ -1,4 +1,5 @@
 """IO Protocols"""
+
 import functools
 import importlib
 from typing import Any, Callable, Dict, TextIO

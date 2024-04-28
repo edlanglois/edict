@@ -1,7 +1,7 @@
 exclude: ^tests/.*\.out\.
 repos:
   - repo: https://github.com/ambv/black
-    rev: 19.10b0
+    rev: 24.4.2
     hooks:
       - id: black
         args: [--safe]
@@ -10,11 +10,11 @@ repos:
     hooks:
     -   id: seed-isort-config
   - repo: https://github.com/timothycrosley/isort
-    rev: 4.3.21
+    rev: 5.13.2
     hooks:
       - id: isort
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v3.1.0
+    rev: v4.6.0
     hooks:
       - id: check-ast
       - id: check-docstring-first
@@ -27,7 +27,7 @@ repos:
       - id: debug-statements
       - id: end-of-file-fixer
       - id: trailing-whitespace
-  - repo: https://gitlab.com/pycqa/flake8
-    rev: 3.8.3
+  - repo: https://github.com/pycqa/flake8
+    rev: 7.0.0
     hooks:
       - id: flake8

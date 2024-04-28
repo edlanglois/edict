@@ -1,4 +1,5 @@
 """Stream editors."""
+
 from edict.types import RecordStream
 
 __all__ = [

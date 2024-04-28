@@ -1,4 +1,5 @@
 """Parse edict files."""
+
 from __future__ import annotations
 
 import functools
