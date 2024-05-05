@@ -45,12 +45,27 @@ def write_beancount_journal(f: TextIO, data: RecordStream, args: Dict) -> None:
         _write_record(f, record)
 
 
+# Translation table for quoted string sanitization
+_TRANS_SANITIZE = str.maketrans(
+    {
+        "\\": "\\\\",
+        '"': '\\"',
+    }
+)
+
+
 def _record_value(
-    record: Record, key: str, fmt: Optional[str] = None, default: str = ""
+    record: Record,
+    key: str,
+    fmt: Optional[str] = None,
+    default: str = "",
+    sanitize: bool = True,
 ) -> str:
     value = record.get(key, default)
     if value is None:
         value = default
+    if sanitize:
+        value = value.translate(_TRANS_SANITIZE)
     if value and fmt is not None:
         value = fmt.format(value)
     return value
