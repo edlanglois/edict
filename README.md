@@ -145,10 +145,14 @@ The available functions are:
    Format the current record as a string.
    Used for debugging with `log(record_str())`.
 
-* `substring(string: STRING, start: NUMBER, end: NUMBER) -> NUMBER`
+* `substring(string: STRING, start: NUMBER[, end: NUMBER]) -> STRING`
    The sub-string of `string` from `start` (inclusive) to `end` (exclusive).
    Negative indices count from the end. The last character has index `-1`.
    Equivalent to the Python expression `string[start:end]`.
+
+* `replace(string: STRING, old: STRING, new: STRING[, count: NUMBER]) -> STRING`
+   Replace up to `count` occurrences of `old` with `new` in `string`.
+   Replaces all by default. Equivalent to python `str.replace`.
 
 [spt]: https://docs.python.org/3/library/datetime.html#strftime-strptime-behavior
 

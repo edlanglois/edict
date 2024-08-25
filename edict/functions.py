@@ -282,6 +282,42 @@ class SubString(FunctionCall[str]):
         return inner_value[start_value:end_value]
 
 
+class Replace(FunctionCall[str]):
+    """Replace substrings in a string
+
+    Args:
+        inner: Perform replacement on this string.
+        old: Substring to replace.
+        new: Replace occurrences of `old` with `new`.
+        count: Maximum number of occurrences to replace
+    """
+
+    name = "replace"
+
+    def __init__(
+        self,
+        inner: ProgramElement[str],
+        old: ProgramElement[str],
+        new: ProgramElement[str],
+        count: Optional[ProgramElement[Decimal]] = None,
+    ) -> None:
+        super().__init__(dtype=DataType.STRING)
+        self.inner = as_string(inner)
+        self.old = as_string(old)
+        self.new = as_string(new)
+        self.count = as_number(count) if count is not None else None
+
+    def _call(self, record: Record, context: RuntimeContext) -> str:
+        inner_value = self.inner(record, context)
+        old_value = self.old(record, context)
+        new_value = self.new(record, context)
+        if self.count is not None:
+            count_value = _decimal_as_int(self.count(record, context))
+        else:
+            count_value = -1
+        return inner_value.replace(old_value, new_value, count_value)
+
+
 # Public API functions
 _PUBLIC_FUNCTIONS: Sequence[Type[FunctionCall]] = (
     AsNumber,
@@ -291,6 +327,7 @@ _PUBLIC_FUNCTIONS: Sequence[Type[FunctionCall]] = (
     ReadDate,
     RecordStr,
     SubString,
+    Replace,
 )
 FUNCTION_TABLE: Dict[str, Callable[..., FunctionCall]] = {
     f.name: f for f in _PUBLIC_FUNCTIONS
