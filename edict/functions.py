@@ -86,7 +86,11 @@ class AsNumber(_ImplicitFunctionCall[Decimal]):
     name = "as_number"
 
     def __init__(
-        self, inner: ProgramElement, *, separator: str = ",", implicit: bool = False
+        self,
+        inner: ProgramElement,
+        *,
+        separator: str = ",",
+        implicit: bool = False,
     ):
         dtype = DataType.NUMBER
         _check_interpret_type(inner, dtype)
@@ -208,7 +212,8 @@ class ReadDate(FunctionCall[str]):
 
         return (
             datetime.datetime.strptime(
-                self.date_string(record, context), self.date_format(record, context)
+                self.date_string(record, context),
+                self.date_format(record, context),
             )
             .date()
             .isoformat()
@@ -249,39 +254,6 @@ def _decimal_as_int(x: Decimal) -> int:
     return numerator
 
 
-class SubString(FunctionCall[str]):
-    """Extract a substring.
-
-    Args:
-        inner: Take a substring of this string.
-        start: Index of the start of the substring. The first character has index 0.
-            Negative numbers count from the end. The last character has index -1.
-        end: Index of one past the end of the substring.
-    """
-
-    name = "substring"
-
-    def __init__(
-        self,
-        inner: ProgramElement[str],
-        start: ProgramElement[Decimal],
-        end: Optional[ProgramElement[Decimal]] = None,
-    ):
-        super().__init__(dtype=DataType.STRING)
-        self.inner = as_string(inner)
-        self.start = as_number(start)
-        self.end = as_number(end) if end is not None else None
-
-    def _call(self, record: Record, context: RuntimeContext) -> str:
-        inner_value = self.inner(record, context)
-        start_value = _decimal_as_int(self.start(record, context))
-        if self.end is not None:
-            end_value: Optional[int] = _decimal_as_int(self.end(record, context))
-        else:
-            end_value = None
-        return inner_value[start_value:end_value]
-
-
 class Replace(FunctionCall[str]):
     """Replace substrings in a string
 
@@ -318,6 +290,68 @@ class Replace(FunctionCall[str]):
         return inner_value.replace(old_value, new_value, count_value)
 
 
+class Round(FunctionCall[Decimal]):
+    """Round number to a given number of decimal places
+
+    Args:
+        inner: Round this value
+        ndigits: Optional integer number of decimal digits to round to.
+                 Defaults to 0.
+    """
+
+    name = "round"
+
+    def __init__(
+        self,
+        inner: ProgramElement[Decimal],
+        ndigits: Optional[ProgramElement[Decimal]] = None,
+    ):
+        super().__init__(dtype=DataType.NUMBER)
+        self.inner = as_number(inner)
+        self.ndigits = as_number(ndigits) if ndigits is not None else None
+
+    def _call(self, record: Record, context: RuntimeContext) -> Decimal:
+        inner_value = self.inner(record, context)
+        if self.ndigits is not None:
+            ndigits_value = _decimal_as_int(self.ndigits(record, context))
+        else:
+            ndigits_value = 0
+        return round(inner_value, ndigits_value)
+
+
+class SubString(FunctionCall[str]):
+    """Extract a substring.
+
+    Args:
+        inner: Take a substring of this string.
+        start: Index of the start of the substring. The first character has index 0.
+            Negative numbers count from the end. The last character has index -1.
+        end: Index of one past the end of the substring.
+    """
+
+    name = "substring"
+
+    def __init__(
+        self,
+        inner: ProgramElement[str],
+        start: ProgramElement[Decimal],
+        end: Optional[ProgramElement[Decimal]] = None,
+    ):
+        super().__init__(dtype=DataType.STRING)
+        self.inner = as_string(inner)
+        self.start = as_number(start)
+        self.end = as_number(end) if end is not None else None
+
+    def _call(self, record: Record, context: RuntimeContext) -> str:
+        inner_value = self.inner(record, context)
+        start_value = _decimal_as_int(self.start(record, context))
+        if self.end is not None:
+            end_value: Optional[int] = _decimal_as_int(self.end(record, context))
+        else:
+            end_value = None
+        return inner_value[start_value:end_value]
+
+
 # Public API functions
 _PUBLIC_FUNCTIONS: Sequence[Type[FunctionCall]] = (
     AsNumber,
@@ -326,8 +360,9 @@ _PUBLIC_FUNCTIONS: Sequence[Type[FunctionCall]] = (
     OutputProtocol,
     ReadDate,
     RecordStr,
-    SubString,
     Replace,
+    Round,
+    SubString,
 )
 FUNCTION_TABLE: Dict[str, Callable[..., FunctionCall]] = {
     f.name: f for f in _PUBLIC_FUNCTIONS
