@@ -9,11 +9,11 @@ import pathlib
 import re
 from dataclasses import dataclass
 from decimal import Decimal
+from importlib import resources
 from pathlib import Path
 from typing import Any, Callable, List, Optional, Tuple, Union
 
 import lark
-import pkg_resources
 
 from . import program
 from .stream import STREAM_EDITORS, StreamEditor
@@ -42,7 +42,7 @@ def _get_parser(file_path: Optional[PathLike] = None) -> lark.Lark:
     Args:
         file_path: The full path of the source file. Used for relative imports.
     """
-    grammar_file = pkg_resources.resource_filename("edict", "edict.lark")
+    grammar_file = resources.files("edict") / "edict.lark"
     decode_quoted_string_callback = _make_lexer_callback(_decode_quoted_string)
     lexer_callbacks = {
         "FALSE": _make_const_lexer_callback(False),
@@ -52,8 +52,8 @@ def _get_parser(file_path: Optional[PathLike] = None) -> lark.Lark:
         "BRACED_IDENTIFIER": decode_quoted_string_callback,
         "REGEX_STRING": _make_lexer_callback(_decode_regex_string),
     }
-    return lark.Lark.open(
-        grammar_file,
+    return lark.Lark(
+        grammar_file.open(),
         parser="lalr",
         transformer=_TransformToProgram(file_path=file_path),
         lexer_callbacks=lexer_callbacks,
