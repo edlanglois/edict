@@ -1,6 +1,27 @@
 [build-system]
-requires = ["setuptools >= 42", "wheel", "setuptools_scm[toml]>=3.4"]
+requires = ["setuptools>=80", "setuptools_scm>=8"]
 build-backend = "setuptools.build_meta"
+
+[project]
+name = "edict"
+authors = [
+    { name="Eric Langlois", email="eric@langlois.xyz" },
+]
+description = "Eric's Dictionary Transformer"
+readme = "README.md"
+requires-python = ">=3.10"
+classifiers = [
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+]
+dynamic = ["version"]
+
+dependencies = [
+    "lark",
+]
+
+[project.scripts]
+edict = "edict.cli:main"
 
 [tool.setuptools_scm]
 write_to = "edict/version.py"
