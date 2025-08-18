@@ -25,3 +25,14 @@ edict = "edict.cli:main"
 
 [tool.setuptools_scm]
 write_to = "edict/version.py"
+
+[tool.pytest.ini_options]
+# Don't show deprecation warning for dependencies
+filterwarnings = [
+    "ignore::DeprecationWarning",
+    "default::DeprecationWarning:__main__",
+    "default::DeprecationWarning:edict",
+    "ignore::PendingDeprecationWarning",
+    "default::PendingDeprecationWarning:__main__",
+    "default::PendingDeprecationWarning:edict",
+]
