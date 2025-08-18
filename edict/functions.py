@@ -373,5 +373,5 @@ def function_call(name: str, args: Sequence[ProgramElement]):
     try:
         f = FUNCTION_TABLE[name]
     except KeyError:
-        raise EPrepareError(f"No function named {name!r}")
+        raise EPrepareError(f"No function named {name!r}") from None
     return f(*args)

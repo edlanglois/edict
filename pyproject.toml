@@ -26,6 +26,15 @@ edict = "edict.cli:main"
 [tool.setuptools_scm]
 write_to = "edict/version.py"
 
+[tool.ruff]
+extend-select = [
+    "B",
+    "E",
+    "F",
+    "FIX003",
+    "W",
+]
+
 [tool.pytest.ini_options]
 # Don't show deprecation warning for dependencies
 filterwarnings = [

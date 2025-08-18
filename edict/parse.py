@@ -236,7 +236,7 @@ class _TransformToProgram(lark.Transformer):
             assert isinstance(t_value.value, bool)
             dtype = program.DataType.BOOLEAN
         else:
-            assert False, f"Unexpected type: {t_value.type}"
+            raise ValueError(f"Unexpected type: {t_value.type}")
 
         return program.Literal(value=t_value.value, dtype=dtype)
 
@@ -285,7 +285,7 @@ class _TransformToProgram(lark.Transformer):
         elif t_op.value == "%":
             op = _decimal_mod
         else:
-            assert False, f"Unexpected operator: {t_op}"
+            raise ValueError(f"Unexpected operator: {t_op}")
         return program.BinaryOperator(left, right, op, program.DataType.NUMBER)
 
     def a_expr(self, args):
@@ -303,7 +303,7 @@ class _TransformToProgram(lark.Transformer):
             op = operator.concat
             dtype = program.DataType.STRING
         else:
-            assert False, f"Unexpected operator: {t_op}"
+            raise ValueError(f"Unexpected operator: {t_op}")
         return program.BinaryOperator(left, right, op, dtype)
 
     def comp_expr(self, args):
