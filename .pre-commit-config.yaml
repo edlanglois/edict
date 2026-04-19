@@ -1,12 +1,12 @@
 exclude: ^tests/.*\.out\.
 repos:
   - repo: https://github.com/ambv/black
-    rev: 25.1.0
+    rev: 26.3.1
     hooks:
       - id: black
         args: [--safe]
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.12.9
+    rev: v0.15.11
     hooks:
       - id: ruff-check
   - repo: https://github.com/pre-commit/pre-commit-hooks
