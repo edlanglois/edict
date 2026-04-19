@@ -2,14 +2,14 @@
 
 from __future__ import annotations
 
-from typing import Dict, Iterable, List, Optional, TextIO
+from typing import Iterable, TextIO
 
 from ..types import Record, RecordStream
 
 __all__ = ["write_beancount_journal"]
 
 
-def _get_beancount_posting_numbers(fields: Iterable[str]) -> List[int]:
+def _get_beancount_posting_numbers(fields: Iterable[str]) -> list[int]:
     prefix = "account"
     prefix_len = len(prefix)
     posting_numbers = set()
@@ -26,7 +26,7 @@ def _get_beancount_posting_numbers(fields: Iterable[str]) -> List[int]:
     return list(sorted(posting_numbers))
 
 
-def write_beancount_journal(f: TextIO, data: RecordStream, args: Dict) -> None:
+def write_beancount_journal(f: TextIO, data: RecordStream, args: dict) -> None:
     """Write an beancount journal file.
 
     Format Specification:
@@ -58,7 +58,7 @@ _TRANS_SANITIZE = str.maketrans(
 def _record_value(
     record: Record,
     key: str,
-    fmt: Optional[str] = None,
+    fmt: str | None = None,
     default: str = "",
     sanitize: bool = True,
 ) -> str:

@@ -11,7 +11,7 @@ from dataclasses import dataclass
 from decimal import Decimal
 from importlib import resources
 from pathlib import Path
-from typing import Any, Callable, List, Optional, Tuple, Union
+from typing import Any, Callable, Union
 
 import lark
 
@@ -23,20 +23,20 @@ __all__ = ["parse_file", "parse_text"]
 PathLike = Union[str, os.PathLike]
 
 
-def parse_file(file: PathLike) -> Tuple[program.Program, Optional[StreamEditor]]:
-    with open(file, "r") as f:
+def parse_file(file: PathLike) -> tuple[program.Program, StreamEditor | None]:
+    with open(file) as f:
         return parse_text(text=f.read(), file_path=file)
 
 
 def parse_text(
-    text: str, file_path: Optional[PathLike] = None
-) -> Tuple[program.Program, Optional[StreamEditor]]:
+    text: str, file_path: PathLike | None = None
+) -> tuple[program.Program, StreamEditor | None]:
     parser = _get_parser(file_path=file_path)
     # parser.parse() value is the return value of _TransformToProgram.start()
     return parser.parse(text)  # type: ignore
 
 
-def _get_parser(file_path: Optional[PathLike] = None) -> lark.Lark:
+def _get_parser(file_path: PathLike | None = None) -> lark.Lark:
     """Make a Lark parser for Edict files.
 
     Args:
@@ -142,11 +142,11 @@ class ScriptContext:
                        processing. Only allowed on the top-level script.
     """
 
-    file_path: Optional[Path] = None
+    file_path: Path | None = None
     case_insensitive: bool = False
-    default_field: Optional[program.Identifier] = None
-    output_fields: Optional[List[str]] = None
-    pre_transform: Optional[StreamEditor] = None
+    default_field: program.Identifier | None = None
+    output_fields: list[str] | None = None
+    pre_transform: StreamEditor | None = None
 
 
 def _directive_case_insensitive(context: ScriptContext):
@@ -203,7 +203,7 @@ INLINE_DIRECTIVES = {"import": _directive_import}
 class _TransformToProgram(lark.Transformer):
     """Transform to a structured Edict program"""
 
-    def __init__(self, file_path: Optional[PathLike] = None):
+    def __init__(self, file_path: PathLike | None = None):
         self._context = ScriptContext()
         if file_path is not None:
             self._context.file_path = pathlib.Path(file_path)
@@ -330,7 +330,7 @@ class _TransformToProgram(lark.Transformer):
         pattern: program.ProgramElement,
         string: program.ProgramElement,
         case_insensitive: bool,
-    ) -> Union[program.Match, program.SubString]:
+    ) -> program.Match | program.SubString:
         if isinstance(pattern, program.Literal):
             if pattern.dtype == program.DataType.STRING:
                 return program.SubString(

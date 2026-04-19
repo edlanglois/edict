@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Dict, Optional, TextIO, Union
+from typing import TYPE_CHECKING, TextIO
 
 from edict import parse
 from edict.program import Program, RuntimeContext
@@ -23,7 +23,7 @@ __all__ = [
 class Edict:
     """Transform dictionaries"""
 
-    def __init__(self, program: Program, pre_transform: Optional[StreamEditor]):
+    def __init__(self, program: Program, pre_transform: StreamEditor | None):
         self._program = program
         self._pre_transform = pre_transform
 
@@ -33,7 +33,7 @@ class Edict:
         out: TextIO,
         read_protocol="csv",
         write_protocol="csv",
-        protocol_args: Optional[Dict] = None,
+        protocol_args: dict | None = None,
     ) -> None:
         if protocol_args is None:
             protocol_args = {}
@@ -65,6 +65,6 @@ def loads(text: str) -> Edict:
     return Edict(program, pre_transform)
 
 
-def load(file: Union[str, os.PathLike]) -> Edict:
+def load(file: str | os.PathLike) -> Edict:
     program, pre_transform = parse.parse_file(file)
     return Edict(program, pre_transform)

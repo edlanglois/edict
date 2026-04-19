@@ -6,7 +6,7 @@ import argparse
 import contextlib
 import pathlib
 import sys
-from typing import Generator, Optional, TextIO
+from typing import Generator, TextIO
 
 from edict import __version__, load
 from edict.program import RuntimeContext
@@ -63,9 +63,7 @@ def parse_args(argv=None):
 
 
 @contextlib.contextmanager
-def open_(
-    filename: Optional[pathlib.Path], mode="r", **kwargs
-) -> Generator[TextIO, None, None]:
+def open_(filename: pathlib.Path | None, mode="r", **kwargs) -> Generator[TextIO]:
     if filename is None:
         if mode == "r":
             f = sys.stdin

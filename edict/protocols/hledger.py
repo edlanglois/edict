@@ -3,14 +3,14 @@
 from __future__ import annotations
 
 import re
-from typing import Dict, Iterable, List, Optional, TextIO
+from typing import Iterable, TextIO
 
 from ..types import Record, RecordStream
 
 __all__ = ["write_hledger_journal"]
 
 
-def _get_hledger_posting_numbers(fields: Iterable[str]) -> List[int]:
+def _get_hledger_posting_numbers(fields: Iterable[str]) -> list[int]:
     prefix = "account"
     prefix_len = len(prefix)
     posting_numbers = set()
@@ -32,7 +32,7 @@ def _get_hledger_posting_numbers(fields: Iterable[str]) -> List[int]:
 _QUOTE_CURRENCY_PATTERN = re.compile(r'[-+\d\s.@*;"}{=]')
 
 
-def write_hledger_journal(f: TextIO, data: RecordStream, args: Dict) -> None:
+def write_hledger_journal(f: TextIO, data: RecordStream, args: dict) -> None:
     """Write an hledger journal file.
 
     Format Specification:
@@ -76,7 +76,7 @@ def _write_record(f: TextIO, record: Record) -> None:
     f.write("\n")
 
 
-def _with_currency(amount: str, currency: Optional[str]) -> str:
+def _with_currency(amount: str, currency: str | None) -> str:
     """Format an amount with a currency or commodity."""
     if currency is None:
         return amount

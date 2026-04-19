@@ -9,10 +9,8 @@ from typing import (
     Callable,
     Generic,
     Iterable,
-    List,
     Optional,
     Sequence,
-    Tuple,
     TypeVar,
 )
 
@@ -109,8 +107,8 @@ class BinaryOperator(ProgramElement[T], Generic[T, T1, T2]):
         right: ProgramElement,
         op: Callable[[T1, T2], T],
         dtype: DataType,
-        dtype_left: Optional[DataType] = None,
-        dtype_right: Optional[DataType] = None,
+        dtype_left: DataType | None = None,
+        dtype_right: DataType | None = None,
     ):
         super().__init__(dtype=dtype)
         if dtype_left is None:
@@ -248,7 +246,7 @@ class _Executable(ProgramElement[None]):
     def __init__(self):
         super().__init__(dtype=DataType.NONE)
 
-    def fields(self, input_fields: Iterable[str]) -> List[str]:
+    def fields(self, input_fields: Iterable[str]) -> list[str]:
         fields = OrderedSet(input_fields)
         self._update_fields(fields)
         return list(fields)
@@ -320,7 +318,7 @@ class Rule(_Executable):
 
     def __init__(
         self,
-        ifthens: Iterable[Tuple[ProgramElement, _Executable]],
+        ifthens: Iterable[tuple[ProgramElement, _Executable]],
         else_=Optional[_Executable],
     ):
         super().__init__()

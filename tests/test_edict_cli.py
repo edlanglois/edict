@@ -8,12 +8,12 @@ FILES_DIR = TEST_DIR / "files"
 
 def test_edict_csv_identity_stdio():
     csv_in = FILES_DIR / "accounting.in.csv"
-    with open(csv_in, "r") as fin:
+    with open(csv_in) as fin:
         result = subprocess.run(
             ["edict", "-r", "csv", "-w", "csv"], stdin=fin, capture_output=True
         )
     assert result.returncode == 0
-    with open(csv_in, "r") as fout_target:
+    with open(csv_in) as fout_target:
         target = fout_target.read()
     assert result.stdout.decode() == target
 
@@ -26,9 +26,9 @@ def test_edict_csv_identity_fileio():
             ["edict", "-i", csv_in, "-r", "csv", "-o", actual_csv_out, "-w", "csv"]
         )
         assert result.returncode == 0
-        with open(csv_in, "r") as fout_target:
+        with open(csv_in) as fout_target:
             target = fout_target.read()
-        with open(actual_csv_out, "r") as fout_actual:
+        with open(actual_csv_out) as fout_actual:
             actual = fout_actual.read()
         assert actual == target
 
@@ -42,7 +42,7 @@ def test_edict_csv():
         capture_output=True,
     )
     assert result.returncode == 0
-    with open(target_csv_out, "r") as fout_target:
+    with open(target_csv_out) as fout_target:
         target = fout_target.read()
     assert result.stdout.decode() == target
 
@@ -57,7 +57,7 @@ def test_edict_csv_chained():
         capture_output=True,
     )
     assert result.returncode == 0
-    with open(target_csv_out, "r") as fout_target:
+    with open(target_csv_out) as fout_target:
         target = fout_target.read()
     assert result.stdout.decode() == target
 
@@ -71,6 +71,6 @@ def test_edict_log():
         capture_output=True,
     )
     assert result.returncode == 0
-    with open(target_log_file, "r") as f:
+    with open(target_log_file) as f:
         target_log = f.read()
     assert result.stderr.decode() == target_log

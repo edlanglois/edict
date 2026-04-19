@@ -56,7 +56,7 @@ def application(request):
 def test_application(application):
     e = edict.load(application.edict_file)
     out = io.StringIO()
-    with open(application.in_file, "r") as fin:
+    with open(application.in_file) as fin:
         e.apply(
             fin,
             out,
@@ -65,7 +65,7 @@ def test_application(application):
             protocol_args=application.protocol_args,
         )
 
-    with open(application.out_file, "r") as fout:
+    with open(application.out_file) as fout:
         fout_target = fout.read()
 
     assert out.getvalue() == fout_target

@@ -2,13 +2,13 @@
 
 from __future__ import annotations
 
-from typing import Any, Generic, Iterable, Iterator, Optional, TypeVar
+from typing import Any, Generic, Iterable, Iterator, TypeVar
 
 T = TypeVar("T")
 
 
 class OrderedSet(Generic[T]):
-    def __init__(self, elems: Optional[Iterable[T]] = None):
+    def __init__(self, elems: Iterable[T] | None = None):
         if elems is None:
             self._data = {}
         else:

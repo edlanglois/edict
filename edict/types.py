@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Dict, Iterable, List, NamedTuple
+from typing import Dict, Iterable, NamedTuple
 
 __all__ = [
     "RecordStream",
@@ -13,5 +13,5 @@ Record = Dict[str, str]
 
 
 class RecordStream(NamedTuple):
-    fields: List[str]
+    fields: list[str]
     records: Iterable[Record]
