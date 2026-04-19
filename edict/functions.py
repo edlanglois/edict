@@ -101,9 +101,9 @@ class AsNumber(_ImplicitFunctionCall[Decimal]):
         value = self.inner(record, context)
         if isinstance(value, Decimal):
             return value
-        assert isinstance(
-            value, str
-        ), f"{self.__class__.__name__}: Invalid input {value!r}"
+        assert isinstance(value, str), (
+            f"{self.__class__.__name__}: Invalid input {value!r}"
+        )
         return Decimal(value.replace(self.separator, ""))
 
 

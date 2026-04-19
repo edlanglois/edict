@@ -26,7 +26,7 @@ edict = "edict.cli:main"
 [tool.setuptools_scm]
 write_to = "edict/version.py"
 
-[tool.ruff]
+[tool.ruff.lint]
 extend-select = [
     "B",
     "E",
