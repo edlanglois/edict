@@ -10,9 +10,11 @@ def test_edict_csv_identity_stdio():
     csv_in = FILES_DIR / "accounting.in.csv"
     with open(csv_in) as fin:
         result = subprocess.run(
-            ["edict", "-r", "csv", "-w", "csv"], stdin=fin, capture_output=True
+            ["edict", "-r", "csv", "-w", "csv"],
+            stdin=fin,
+            capture_output=True,
+            check=True,
         )
-    assert result.returncode == 0
     with open(csv_in) as fout_target:
         target = fout_target.read()
     assert result.stdout.decode() == target
@@ -22,10 +24,10 @@ def test_edict_csv_identity_fileio():
     csv_in = FILES_DIR / "accounting.in.csv"
     with tempfile.TemporaryDirectory() as tmpdir:
         actual_csv_out = pathlib.Path(tmpdir) / "output.csv"
-        result = subprocess.run(
-            ["edict", "-i", csv_in, "-r", "csv", "-o", actual_csv_out, "-w", "csv"]
+        subprocess.run(
+            ["edict", "-i", csv_in, "-r", "csv", "-o", actual_csv_out, "-w", "csv"],
+            check=True,
         )
-        assert result.returncode == 0
         with open(csv_in) as fout_target:
             target = fout_target.read()
         with open(actual_csv_out) as fout_actual:
@@ -40,8 +42,8 @@ def test_edict_csv():
     result = subprocess.run(
         ["edict", "-i", csv_in, "-r", "csv", "-w", "csv", edict_file],
         capture_output=True,
+        check=True,
     )
-    assert result.returncode == 0
     with open(target_csv_out) as fout_target:
         target = fout_target.read()
     assert result.stdout.decode() == target
@@ -55,8 +57,8 @@ def test_edict_csv_chained():
     result = subprocess.run(
         ["edict", "-i", csv_in, "-r", "csv", "-w", "csv", edict_file, edict_file2],
         capture_output=True,
+        check=True,
     )
-    assert result.returncode == 0
     with open(target_csv_out) as fout_target:
         target = fout_target.read()
     assert result.stdout.decode() == target
@@ -69,8 +71,8 @@ def test_edict_log():
     result = subprocess.run(
         ["edict", "-i", csv_in, "-r", "csv", "-w", "csv", edict_file],
         capture_output=True,
+        check=True,
     )
-    assert result.returncode == 0
     with open(target_log_file) as f:
         target_log = f.read()
     assert result.stderr.decode() == target_log

@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 import re
-from typing import Iterable, TextIO
+from collections.abc import Iterable
+from typing import TextIO
 
 from ..types import Record, RecordStream
 
@@ -24,7 +25,7 @@ def _get_hledger_posting_numbers(fields: Iterable[str]) -> list[int]:
         else:
             if n >= 0:
                 posting_numbers.add(n)
-    return list(sorted(posting_numbers))
+    return sorted(posting_numbers)
 
 
 # If currency matches then must quote it

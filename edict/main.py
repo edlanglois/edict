@@ -43,7 +43,6 @@ class Edict:
             input_protocol=read_protocol, output_protocol=write_protocol
         )
         write(out, self.transform(read(in_), context))
-        pass
 
     def transform(self, data: RecordStream, context: RuntimeContext) -> RecordStream:
         """Transform a RecordStream

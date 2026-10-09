@@ -21,11 +21,6 @@ def test_ordered_set_eq_shuffle():
     assert OrderedSet([1, 2]) == OrderedSet([2, 1])
 
 
-def test_ordered_set_eq_false():
-    assert not OrderedSet() == OrderedSet([1])
-    assert not OrderedSet(range(2)) == OrderedSet(range(1, 3))
-
-
 def test_ordered_set_neq_true():
     assert OrderedSet() != OrderedSet([1])
     assert OrderedSet(range(2)) != OrderedSet(range(1, 3))

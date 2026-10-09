@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from typing import Any, Generic, Iterable, Iterator, TypeVar
+from collections.abc import Iterable, Iterator
+from typing import Any, Generic, TypeVar
 
 T = TypeVar("T")
 
@@ -14,7 +15,7 @@ class OrderedSet(Generic[T]):
         else:
             self._data = {x: None for x in elems}
 
-    def __eq__(self, other: Any):
+    def __eq__(self, other: object):
         if isinstance(other, OrderedSet):
             return self._data == other._data
         return NotImplemented

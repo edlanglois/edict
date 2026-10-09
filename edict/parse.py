@@ -7,11 +7,12 @@ import operator
 import os
 import pathlib
 import re
+from collections.abc import Callable
 from dataclasses import dataclass
 from decimal import Decimal
 from importlib import resources
 from pathlib import Path
-from typing import Any, Callable, Union
+from typing import Any
 
 import lark
 
@@ -20,7 +21,7 @@ from .stream import STREAM_EDITORS, StreamEditor
 
 __all__ = ["parse_file", "parse_text"]
 
-PathLike = Union[str, os.PathLike]
+PathLike = os.PathLike | str
 
 
 def parse_file(file: PathLike) -> tuple[program.Program, StreamEditor | None]:
@@ -98,7 +99,7 @@ _ESCAPE_SEQUENCES = {
 
 _STRING_ESCAPE_PATTERN = re.compile(
     "|".join(
-        [re.escape(k) for k in _ESCAPE_SEQUENCES.keys()]
+        [re.escape(k) for k in _ESCAPE_SEQUENCES]
         + [r"\\x[0-9A-Fa-f]{2}", r"\\u[0-9A-Fa-f]{4}", r"\\U[0-9A-Fa-f]{6}"]
     )
 )
@@ -107,7 +108,7 @@ _STRING_ESCAPE_PATTERN = re.compile(
 def _escape_replace(m: re.Match) -> str:
     s = m.group(0)
     if s.startswith(r"\x"):
-        return chr(int(s[2:], 16))
+        return chr(int(s[2:], 16))  # noqa: FURB166
     return _ESCAPE_SEQUENCES[s]
 
 
@@ -216,7 +217,6 @@ class _TransformToProgram(lark.Transformer):
     def inline_directive(self, args):
         name, *fargs = args
         return INLINE_DIRECTIVES[name.value](self._context, *fargs)
-        pass
 
     def header(self, args):
         return self._context

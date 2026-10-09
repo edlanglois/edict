@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 import csv
-from typing import Iterable, TextIO
+from collections.abc import Iterable
+from typing import TextIO
 
 from ..types import Record, RecordStream
 

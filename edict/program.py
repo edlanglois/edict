@@ -3,14 +3,11 @@
 from __future__ import annotations
 
 import re
+from collections.abc import Callable, Iterable, Sequence
 from decimal import Decimal
 from typing import (
     Any,
-    Callable,
     Generic,
-    Iterable,
-    Optional,
-    Sequence,
     TypeVar,
 )
 
@@ -33,7 +30,6 @@ __all__ = [
     "DataType",
     "Disjunction",
     "Fields",
-    "function_call",
     "Identifier",
     "Literal",
     "Match",
@@ -47,6 +43,7 @@ __all__ = [
     "UnaryMinus",
     "UnaryNot",
     "ValueComparisonOperator",
+    "function_call",
 ]
 
 
@@ -304,7 +301,6 @@ class BareExpression(_Executable):
 
     def _call(self, record: Record, context: RuntimeContext) -> None:
         self.inner(record, context)
-        return None
 
     def _update_fields(self, fields: OrderedSet[str]) -> None:
         pass
@@ -319,7 +315,7 @@ class Rule(_Executable):
     def __init__(
         self,
         ifthens: Iterable[tuple[ProgramElement, _Executable]],
-        else_=Optional[_Executable],
+        else_: _Executable | None,
     ):
         super().__init__()
         self.ifthens = [

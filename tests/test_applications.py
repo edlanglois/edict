@@ -1,7 +1,7 @@
 import io
 import json
 import pathlib
-from typing import Dict, NamedTuple
+from typing import NamedTuple
 
 import pytest
 
@@ -18,7 +18,7 @@ class Application(NamedTuple):
     edict_file: pathlib.Path
     read_protocol: str
     write_protocol: str
-    protocol_args: Dict
+    protocol_args: dict
 
 
 PROTOCOLS = {".csv": "csv", ".journal": "hledger", ".pattern": "pattern"}
@@ -29,11 +29,10 @@ for edict_file in edict_files:
     (in_file,) = files_dir.glob(name + ".in.*")
     (out_file,) = files_dir.glob(name + ".out.*")
     try:
-        f = open(files_dir / (name + ".args.json"))
+        with open(files_dir / (name + ".args.json")) as f:
+            protocol_args = json.load(f)
     except FileNotFoundError:
         protocol_args = {}
-    else:
-        protocol_args = json.load(f)
 
     applications.append(
         Application(

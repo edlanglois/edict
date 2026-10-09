@@ -3,8 +3,8 @@
 from edict.types import RecordStream
 
 __all__ = [
-    "Reverse",
     "STREAM_EDITORS",
+    "Reverse",
     "StreamEditor",
 ]
 

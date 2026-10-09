@@ -2,14 +2,15 @@
 
 from __future__ import annotations
 
-from typing import Dict, Iterable, NamedTuple
+from collections.abc import Iterable
+from typing import NamedTuple
 
 __all__ = [
-    "RecordStream",
     "Record",
+    "RecordStream",
 ]
 
-Record = Dict[str, str]
+Record = dict[str, str]
 
 
 class RecordStream(NamedTuple):

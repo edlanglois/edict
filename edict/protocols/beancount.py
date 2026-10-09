@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from typing import Iterable, TextIO
+from collections.abc import Iterable
+from typing import TextIO
 
 from ..types import Record, RecordStream
 
@@ -23,7 +24,7 @@ def _get_beancount_posting_numbers(fields: Iterable[str]) -> list[int]:
         else:
             if n >= 0:
                 posting_numbers.add(n)
-    return list(sorted(posting_numbers))
+    return sorted(posting_numbers)
 
 
 def write_beancount_journal(f: TextIO, data: RecordStream, args: dict) -> None:

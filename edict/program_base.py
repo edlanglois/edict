@@ -3,7 +3,7 @@
 from dataclasses import dataclass
 from decimal import Decimal
 from enum import Enum
-from typing import Generic, Optional, TypeVar
+from typing import Generic, TypeVar
 
 from .types import Record
 
@@ -49,7 +49,7 @@ class EPrepareError(Error):
 class ERuntimeError(Error):
     """An Edict runtime error."""
 
-    def __init__(self, *args, record: Optional[Record] = None):
+    def __init__(self, *args, record: Record | None = None):
         self.record = record
 
     def __str__(self) -> str:

@@ -6,7 +6,8 @@ import argparse
 import contextlib
 import pathlib
 import sys
-from typing import Generator, TextIO
+from collections.abc import Generator
+from typing import TextIO
 
 from edict import __version__, load
 from edict.program import RuntimeContext
@@ -98,9 +99,11 @@ def main(argv=None):
     # CSV files somtimes (rarely) contain a byte order mark as the first character
     # Apparently Excel does this when exporting to CSV.
     # Encoding 'utf-8-sig' ignores this mark if it exists.
-    with open_(args.input_file, "r", encoding="utf-8-sig") as fin:
-        with open_(args.output_file, "w") as fout:
-            data = read(fin)
-            for transformer in transformers:
-                data = transformer.transform(data, context)
-            write(fout, data)
+    with (
+        open_(args.input_file, "r", encoding="utf-8-sig") as fin,
+        open_(args.output_file, "w") as fout,
+    ):
+        data = read(fin)
+        for transformer in transformers:
+            data = transformer.transform(data, context)
+        write(fout, data)
