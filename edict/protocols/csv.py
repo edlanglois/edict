@@ -14,7 +14,7 @@ __all__ = ["read_csv"]
 def _csv_records(reader: csv.DictReader, file: TextIO) -> Iterable[Record]:
     for record in reader:
         if None in record:
-            values = record[None]  # type: ignore
+            values = record[None]
             raise ValueError(
                 "\n".join(
                     [

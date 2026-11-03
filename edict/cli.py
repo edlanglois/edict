@@ -74,7 +74,7 @@ def open_(filename: pathlib.Path | None, mode="r", **kwargs) -> Generator[TextIO
             raise ValueError(f"No standard IO for mode {mode}")
         yield f
     else:
-        with open(filename, mode=mode, **kwargs) as f:  # type: ignore
+        with open(filename, mode=mode, **kwargs) as f:
             yield f
 
 

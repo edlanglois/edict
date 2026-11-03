@@ -122,7 +122,8 @@ class BinaryOperator(ProgramElement[T], Generic[T, T1, T2]):
         return self.op(left_value, right_value)
 
     def __str__(self):
-        return f"{self.left} .{self.op.__name__}. {self.right}"
+        op_name = getattr(self.op, "__name__", "<??>")
+        return f"{self.left} .{op_name}. {self.right}"
 
 
 class ValueComparisonOperator(BinaryOperator[bool, Any, Any]):
@@ -255,9 +256,9 @@ class _Executable(ProgramElement[None]):
 class Statements(_Executable):
     """A sequence of executable statements."""
 
-    def __init__(self, statements: Sequence[_Executable]):
+    def __init__(self, statements: Iterable[_Executable]):
         super().__init__()
-        self.statements = statements
+        self.statements = list(statements)
 
     def _call(self, record: Record, context: RuntimeContext) -> None:
         for statement in self.statements:

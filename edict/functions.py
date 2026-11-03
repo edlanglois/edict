@@ -135,11 +135,12 @@ def as_string(inner: ProgramElement) -> ProgramElement[str]:
 
 def as_type(inner: ProgramElement, dtype: DataType) -> ProgramElement:
     # Type inference for the dictionary is overly general
-    return {  # type: ignore
+    converters: dict[DataType, Callable[[ProgramElement], ProgramElement]] = {
         DataType.BOOLEAN: as_boolean,
         DataType.NUMBER: as_number,
         DataType.STRING: as_string,
-    }[dtype](inner)
+    }
+    return converters[dtype](inner)
 
 
 class CaseFold(_ImplicitFunctionCall[str]):
