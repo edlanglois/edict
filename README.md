@@ -221,6 +221,12 @@ python setup.py develop [--user]
 ```
 Re-run this command to refresh the version number (based on git tags).
 
+### Git Hooks
+Hooks are managed with [prek](https://prek.j178.dev) (configured in `prek.toml`):
+```sh
+prek install
+```
+
 ### Versioning
 Uses [Semantic Versioning](https://semver.org/).
 
